@@ -4,7 +4,7 @@ Módulo para detectar archivos de audio falsos o upscaleados
 
 from typing import Dict, Tuple
 from src.config import (
-    CUTOFF_THRESHOLDS, SUSPICIOUS_THRESHOLD,
+    CUTOFF_THRESHOLDS, SUSPICIOUS_THRESHOLD, FLAC_SUSPICIOUS_THRESHOLD,
     CLASS_LEGITIMATE, CLASS_FAKE, CLASS_SUSPICIOUS, CLASS_ERROR
 )
 
@@ -79,6 +79,10 @@ class FakeDetector:
         """
         Detecta si un archivo FLAC es falso (convertido desde lossy)
         
+        Usa un enfoque híbrido:
+        1. Si tiene contenido por encima de 20 kHz → Lossless auténtico
+        2. Si no, analiza la presencia espectral en 18-22 kHz
+        
         Args:
             analysis_results: Resultados del análisis de AudioAnalyzer
             
@@ -86,27 +90,39 @@ class FakeDetector:
             tuple: (clasificación, razón)
         """
         cutoff_freq = analysis_results.get('cutoff_frequency')
+        spectral_presence = analysis_results.get('spectral_presence', 0)
+        high_freq_energy = analysis_results.get('high_freq_energy', -100)
+        has_content_above_20k = analysis_results.get('has_content_above_20k', False)
         
-        if cutoff_freq is None:
+        if cutoff_freq is None and spectral_presence == 0:
             return CLASS_ERROR, "No se pudo calcular la frecuencia de corte"
         
-        expected_cutoff = CUTOFF_THRESHOLDS['flac']
+        # ENFOQUE HÍBRIDO 1: Check rápido - si hay contenido >20 kHz es lossless
+        if has_content_above_20k:
+            return CLASS_LEGITIMATE, "Contenido detectado por encima de 20 kHz - FLAC lossless auténtico"
         
-        # FLAC debería preservar todo el espectro audible
-        if cutoff_freq < CUTOFF_THRESHOLDS['mp3_128']:
-            return CLASS_FAKE, f"Frecuencia de corte de {cutoff_freq:.0f} Hz indica conversión desde MP3 128 kbps o inferior"
+        # ENFOQUE HÍBRIDO 2: Usar presencia espectral como métrica principal
+        # Si hay >30% de presencia en altas frecuencias (18-22 kHz), es lossless
+        if spectral_presence > 30:
+            return CLASS_LEGITIMATE, f"Presencia espectral {spectral_presence:.1f}% en altas frecuencias - FLAC lossless auténtico"
         
-        elif cutoff_freq < CUTOFF_THRESHOLDS['mp3_192']:
-            return CLASS_FAKE, f"Frecuencia de corte de {cutoff_freq:.0f} Hz indica probable conversión desde MP3 128-192 kbps"
+        # Si hay presencia moderada (15-30%), verificar energía
+        elif spectral_presence > 15:
+            if high_freq_energy > -60:
+                return CLASS_LEGITIMATE, f"Presencia espectral {spectral_presence:.1f}% con energía adecuada - FLAC lossless"
+            else:
+                return CLASS_SUSPICIOUS, f"Presencia espectral {spectral_presence:.1f}% moderada - posible conversión de alta calidad"
         
-        elif cutoff_freq < CUTOFF_THRESHOLDS['mp3_256']:
-            return CLASS_SUSPICIOUS, f"Frecuencia de corte de {cutoff_freq:.0f} Hz indica posible conversión desde MP3 192-256 kbps"
+        # Si hay poca presencia (5-15%), es sospechoso
+        elif spectral_presence > 5:
+            return CLASS_SUSPICIOUS, f"Presencia espectral baja ({spectral_presence:.1f}%) - posible conversión desde MP3 de calidad media"
         
-        elif cutoff_freq < expected_cutoff - SUSPICIOUS_THRESHOLD:
-            return CLASS_SUSPICIOUS, f"Frecuencia de corte de {cutoff_freq:.0f} Hz es sospechosamente baja para FLAC"
-        
+        # Si hay muy poca o ninguna presencia (<5%), es fake
         else:
-            return CLASS_LEGITIMATE, f"Frecuencia de corte {cutoff_freq:.0f} Hz coherente con FLAC lossless"
+            if cutoff_freq and cutoff_freq < 16500:
+                return CLASS_FAKE, "Sin contenido espectral en altas frecuencias - conversión desde MP3 de baja calidad"
+            else:
+                return CLASS_SUSPICIOUS, f"Presencia espectral muy baja ({spectral_presence:.1f}%) - posible producción con filtrado"
     
     @staticmethod
     def detect_wav(analysis_results: Dict) -> Tuple[str, str]:

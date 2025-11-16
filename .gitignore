@@ -46,3 +46,8 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# PyInstaller
+*.spec
+build.ps1
+fake-music-hunter*.exe
