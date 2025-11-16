@@ -43,12 +43,12 @@ CLASS_FAKE = 'fake'
 CLASS_SUSPICIOUS = 'suspicious'
 CLASS_ERROR = 'error'
 
-# Emojis para output CLI
+# Emojis para output CLI (compatible Windows)
 EMOJI_MAP = {
-    CLASS_LEGITIMATE: '✅',
-    CLASS_FAKE: '❌',
-    CLASS_SUSPICIOUS: '⚠️',
-    CLASS_ERROR: '🚫'
+    CLASS_LEGITIMATE: '[OK]',
+    CLASS_FAKE: '[X]',
+    CLASS_SUSPICIOUS: '[!]',
+    CLASS_ERROR: '[ERR]'
 }
 
 # Colores para CLI (rich)

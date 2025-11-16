@@ -26,7 +26,7 @@ class Reporter:
         Args:
             verbose: Si True, muestra información detallada
         """
-        self.console = Console()
+        self.console = Console(force_terminal=True, legacy_windows=False)
         self.verbose = verbose
         self.results = []
     
@@ -41,7 +41,10 @@ class Reporter:
     
     def print_header(self):
         """Imprime el encabezado del programa"""
-        self.console.print("\n🎵 [bold cyan]Fake Music Hunter v1.0[/bold cyan]")
+        try:
+            self.console.print("\n🎵 [bold cyan]Fake Music Hunter v2.0[/bold cyan]")
+        except UnicodeEncodeError:
+            self.console.print("\n[bold cyan]Fake Music Hunter v2.0[/bold cyan]")
         self.console.print("═" * 50)
     
     def print_scan_info(self, path: str, total_files: int):
@@ -108,24 +111,24 @@ class Reporter:
         errors = sum(1 for r in self.results if r.get('classification') == CLASS_ERROR)
         
         self.console.print("\n" + "═" * 50)
-        self.console.print("\n📊 [bold]Resumen:[/bold]")
+        self.console.print("\n[bold]RESUMEN:[/bold]")
         self.console.print(f"   Total analizado: [cyan]{total:,}[/cyan]")
         
         if legitimate > 0:
             pct = (legitimate / total) * 100
-            self.console.print(f"   ✅ Legítimos: [green]{legitimate:,}[/green] ({pct:.1f}%)")
+            self.console.print(f"   [OK] Legitimos: [green]{legitimate:,}[/green] ({pct:.1f}%)")
         
         if fake > 0:
             pct = (fake / total) * 100
-            self.console.print(f"   ❌ Fake: [red]{fake:,}[/red] ({pct:.1f}%)")
+            self.console.print(f"   [X] Fake: [red]{fake:,}[/red] ({pct:.1f}%)")
         
         if suspicious > 0:
             pct = (suspicious / total) * 100
-            self.console.print(f"   ⚠️  Sospechosos: [yellow]{suspicious:,}[/yellow] ({pct:.1f}%)")
+            self.console.print(f"   [!] Sospechosos: [yellow]{suspicious:,}[/yellow] ({pct:.1f}%)")
         
         if errors > 0:
             pct = (errors / total) * 100
-            self.console.print(f"   🚫 Errores: [dim red]{errors:,}[/dim red] ({pct:.1f}%)")
+            self.console.print(f"   [ERR] Errores: [dim red]{errors:,}[/dim red] ({pct:.1f}%)")
     
     def export_csv(self, output_path: str = None):
         """

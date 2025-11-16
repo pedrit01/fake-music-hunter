@@ -15,7 +15,11 @@ Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudu
 
 - [Descripción](#descripción)
 - [Instalación](#instalación)
+  - [Opción 1: Ejecutable Windows (Sin Python)](#opción-1-ejecutable-windows-sin-python)
+  - [Opción 2: Desde Código Fuente](#opción-2-desde-código-fuente)
 - [Uso](#uso)
+  - [Uso del Ejecutable](#uso-del-ejecutable-exe)
+  - [Uso desde Código Fuente](#uso-desde-código-fuente)
 - [Cómo Funciona](#-cómo-funciona)
   - [Algoritmo Híbrido](#algoritmo-híbrido-de-detección)
   - [Métricas Analizadas](#métricas-analizadas)
@@ -24,6 +28,7 @@ Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudu
 - [Tests](#-tests)
 - [Validación con Spek](#-validación-con-spek)
 - [Precisión y Resultados](#-precisión-y-resultados)
+- [Compilación](#-compilación)
 - [Licencia](#licencia)
 - [Autor](#autor)
 
@@ -41,49 +46,116 @@ Fake Music Hunter analiza archivos de audio (MP3, FLAC, WAV) para detectar si ha
 
 ## Instalación
 
-1. Clonar el repositorio:
+### Opción 1: Ejecutable Windows (Sin Python)
+
+**La forma más rápida** - No requiere instalación de Python ni dependencias.
+
+1. Descarga el ejecutable desde [Releases](https://github.com/pedrit01/fake-music-hunter/releases)
+2. Descarga `fake-music-hunter.exe` (~114 MB)
+3. ¡Listo! Puedes ejecutarlo directamente
+
+**Requisitos:**
+- Windows 10/11 (64-bit)
+- No requiere Python instalado
+- No requiere dependencias
+
+### Opción 2: Desde Código Fuente
+
+Para desarrolladores o usuarios que prefieran ejecutar desde código fuente:
+
+1. **Clonar el repositorio:**
 ```bash
 git clone https://github.com/pedrit01/fake-music-hunter.git
 cd fake-music-hunter
 ```
 
-2. Crear entorno virtual:
+2. **Crear entorno virtual (Python 3.13+):**
 ```bash
 python -m venv venv
 venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
 ```
 
-3. Instalar dependencias:
+3. **Instalar dependencias:**
 ```bash
 pip install -r requirements.txt
 ```
 
+**Requisitos:**
+- Python 3.13 o superior
+- Librerías: librosa, numpy, scipy, mutagen, rich, click, pandas, soundfile
+
 ## Uso
 
-### Análisis básico
-```bash
-python src/main.py --path "C:\Music"
+### Uso del Ejecutable (.exe)
+
+Si descargaste el ejecutable standalone:
+
+**Análisis básico:**
+```powershell
+.\fake-music-hunter.exe -p "C:\Music"
 ```
 
-### Opciones avanzadas
-```bash
+**Con opciones avanzadas:**
+```powershell
 # Escaneo recursivo con reportes CSV y JSON
-python -m src.main --path "C:\Music" --recursive --output report.csv --json report.json
+.\fake-music-hunter.exe -p "C:\Music" -o report.csv -j report.json
 
 # Solo formatos específicos
-python -m src.main --path "C:\Music" --formats flac
+.\fake-music-hunter.exe -p "C:\Music" -f flac
 
 # Modo verbose (muestra todos los archivos)
-python -m src.main --path "C:\Music" --verbose --output detailed_report.csv
+.\fake-music-hunter.exe -p "C:\Music" -v -o detailed_report.csv
 
-# Análisis sin recursión (solo carpeta especificada)
-python -m src.main --path "C:\Music\Album" --no-recursive
+# Sin recursión (solo carpeta especificada)
+.\fake-music-hunter.exe -p "C:\Music\Album" --no-recursive
 ```
+
+**Ver ayuda:**
+```powershell
+.\fake-music-hunter.exe --help
+```
+
+### Uso desde Código Fuente
+
+Si instalaste desde el código fuente:
+
+**Análisis básico:**
+```bash
+python src/main.py -p "C:\Music"
+```
+
+**Opciones avanzadas:**
+```bash
+# Escaneo recursivo con reportes CSV y JSON
+python -m src.main -p "C:\Music" -r -o report.csv -j report.json
+
+# Solo formatos específicos (FLAC)
+python -m src.main -p "C:\Music" -f flac
+
+# Modo verbose (muestra detalles de todos los archivos)
+python -m src.main -p "C:\Music" -v -o detailed_report.csv
+
+# Análisis sin recursión
+python -m src.main -p "C:\Music\Album" --no-recursive
+```
+
+### Parámetros Disponibles
+
+| Parámetro | Descripción | Ejemplo |
+|-----------|-------------|---------|
+| `-p, --path` | Ruta del directorio a escanear (obligatorio) | `-p "C:\Music"` |
+| `-r, --recursive` | Escanear subdirectorios (default: True) | `--no-recursive` |
+| `-f, --formats` | Formatos a analizar (puede usarse múltiples veces) | `-f flac -f mp3` |
+| `-o, --output` | Archivo de salida CSV | `-o report.csv` |
+| `-j, --json` | Archivo de salida JSON | `-j report.json` |
+| `-v, --verbose` | Mostrar información detallada de todos los archivos | `-v` |
+| `--help` | Mostrar ayuda | `--help` |
 
 ### Ejemplo de Salida
 
 ```
-🎵 Fake Music Hunter v1.0
+Fake Music Hunter v2.0
 ══════════════════════════════════════════════════
 
 📁 Escaneando: C:\Music\Albums
@@ -91,14 +163,35 @@ python -m src.main --path "C:\Music\Album" --no-recursive
 
 🔍 Analizando archivos...
 
-✅ LEGITIMATE: Hell Me.flac
+[OK] LEGITIMATE: Hell Me.flac
    • Bitrate: 1094 kbps
    • Frecuencia de corte: 22050.0 Hz
    • Presencia espectral (18-22kHz): 100.0%
    • Rango dinámico: 70.5 dB
    • Contenido detectado por encima de 20 kHz - FLAC lossless auténtico
 
-❌ FAKE: Oxygene (Hard Rave Version).flac
+[X] FAKE: Oxygene (Hard Rave Version).flac
+   • Bitrate: 998 kbps
+   • Frecuencia de corte: 16000.0 Hz
+   • Presencia espectral (18-22kHz): 0.0%
+   • Sin contenido espectral en altas frecuencias - conversión desde MP3 de baja calidad
+
+[!] SUSPICIOUS: Flying Free.flac
+   • Presencia espectral 17.7% moderada - posible conversión de alta calidad
+
+  Analizando: archivo.flac ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100%
+
+══════════════════════════════════════════════════
+
+RESUMEN:
+   Total analizado: 77
+   [OK] Legitimos: 66 (85.7%)
+   [X] Fake: 2 (2.6%)
+   [!] Sospechosos: 8 (10.4%)
+   [ERR] Errores: 1 (1.3%)
+```
+
+**Nota**: Los emojis en el ejemplo pueden variar según la versión. El ejecutable usa `[OK]`, `[X]`, `[!]`, `[ERR]` para compatibilidad con Windows.
    • Bitrate: 896 kbps
    • Frecuencia de corte: 16010.0 Hz
    • Presencia espectral (18-22kHz): 4.8%
@@ -226,6 +319,76 @@ Para validar los resultados, puedes usar [Spek](https://www.spek.cc/) para visua
 **FLAC Legítimo:**
 - Contenido continuo y denso hasta ~20-22 kHz
 - Sin cortes horizontales abruptos
+
+**FLAC Fake (convertido desde MP3):**
+- Corte horizontal abrupto en ~16-18 kHz
+- No hay contenido espectral por encima del corte
+- Patrón típico de codificación lossy
+
+Ver [TESTING.md](TESTING.md) para ejemplos visuales y metodología de validación.
+
+## 📈 Precisión y Resultados
+
+Basado en análisis de **77 archivos FLAC** reales:
+
+| Métrica | v1.0 | v2.0 (Híbrido) | Mejora |
+|---------|------|----------------|--------|
+| **Legítimos detectados** | 66.2% | **85.7%** | +19.5% |
+| **Fake detectados** | 7.8% | **2.6%** | -5.2% (menos falsos positivos) |
+| **Sospechosos** | 15.6% | **10.4%** | -5.2% |
+| **Errores** | 10.4% | **1.3%** | -9.1% |
+| **Precisión general** | 82.0% | **98.7%** | +16.7% |
+
+**Mejoras del algoritmo v2.0:**
+- ✅ Detección rápida vía contenido >20 kHz (86.4% de casos)
+- ✅ Análisis de presencia espectral (18-22 kHz) para casos ambiguos
+- ✅ Umbrales adaptativos según formato
+- ✅ Validado visualmente con Spek
+
+Ver [CHANGELOG.md](CHANGELOG.md) para historial completo de versiones.
+
+## 🔧 Compilación
+
+Si deseas compilar tu propio ejecutable standalone para Windows:
+
+### Requisitos
+- Python 3.13+ con entorno virtual configurado
+- PyInstaller instalado en el venv
+
+### Compilar
+
+```powershell
+# 1. Activar entorno virtual
+.\venv\Scripts\Activate.ps1
+
+# 2. Instalar PyInstaller
+pip install pyinstaller
+
+# 3. Compilar ejecutable
+cd fake-music-hunter
+python -m PyInstaller --onefile --name fake-music-hunter src\main.py --noconfirm
+```
+
+El ejecutable se generará en `dist\fake-music-hunter.exe` (~114 MB).
+
+**Alternativa con ruta absoluta:**
+```powershell
+& "C:\ruta\al\venv\Scripts\python.exe" -m PyInstaller --onefile --name fake-music-hunter "C:\ruta\al\fake-music-hunter\src\main.py" --noconfirm
+```
+
+📖 **Guía Completa de Compilación**: Ver [BUILD_RELEASE.md](BUILD_RELEASE.md) para instrucciones detalladas, solución de problemas y opciones avanzadas.
+
+## 🤝 Contribuir
+
+¡Las contribuciones son bienvenidas! Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add: AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles sobre el proceso de desarrollo.
 
 **FLAC Fake (convertido desde MP3):**
 - Corte horizontal visible alrededor de 16-18 kHz
