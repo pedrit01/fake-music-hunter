@@ -74,19 +74,23 @@ class AudioAnalyzer:
             print(f"Error extrayendo metadatos de {self.file_path}: {e}")
             return {}
     
-    def calculate_cutoff_frequency(self) -> Optional[float]:
+    def calculate_spectral_stats(self) -> Dict[str, Optional[float]]:
         """
-        Calcula la frecuencia de corte del archivo de audio
+        Calcula estadísticas espectrales del archivo de audio
         
-        La frecuencia de corte es donde la energía espectral cae significativamente,
-        indicando el límite real del contenido de audio.
+        Analiza la distribución de energía en diferentes rangos de frecuencia
+        para determinar si el archivo es lossless o convertido desde lossy.
         
         Returns:
-            float: Frecuencia de corte en Hz, o None si hay error
+            dict: Diccionario con estadísticas espectrales
         """
         if self.audio_data is None:
             if not self.load_audio():
-                return None
+                return {
+                    'cutoff_frequency': None,
+                    'high_freq_energy': None,
+                    'spectral_presence': None
+                }
         
         try:
             # Calcular STFT (Short-Time Fourier Transform)
@@ -108,21 +112,52 @@ class AudioAnalyzer:
             # Obtener frecuencias correspondientes
             frequencies = librosa.fft_frequencies(sr=self.sr, n_fft=FFT_SIZE)
             
-            # Buscar frecuencia de corte desde las altas frecuencias hacia abajo
-            # Buscamos donde la energía está por encima del threshold
-            cutoff_freq = None
+            # Calcular energía promedio en el rango de altas frecuencias (18-22 kHz)
+            high_freq_mask = (frequencies >= 18000) & (frequencies <= 22000)
+            high_freq_energy = np.mean(spectrum_db[high_freq_mask]) if np.any(high_freq_mask) else -100
             
+            # Contar cuántos bins tienen energía significativa en altas frecuencias
+            # (por encima de -70 dB relativo)
+            significant_high_freq = np.sum(spectrum_db[high_freq_mask] > -70)
+            total_high_freq_bins = np.sum(high_freq_mask)
+            spectral_presence = (significant_high_freq / total_high_freq_bins * 100) if total_high_freq_bins > 0 else 0
+            
+            # Detección simple: ¿hay contenido significativo por encima de 20 kHz?
+            ultra_high_freq_mask = (frequencies >= 20000) & (frequencies <= 22000)
+            has_content_above_20k = np.any(spectrum_db[ultra_high_freq_mask] > -65) if np.any(ultra_high_freq_mask) else False
+            
+            # Buscar frecuencia de corte tradicional (para compatibilidad)
+            cutoff_freq = None
             for i in range(len(frequencies) - 1, -1, -1):
                 if MIN_FREQUENCY <= frequencies[i] <= MAX_FREQUENCY:
                     if spectrum_db[i] > ENERGY_THRESHOLD:
                         cutoff_freq = frequencies[i]
                         break
             
-            return cutoff_freq
+            # Si no encontramos con umbral estricto, intentar con uno más permisivo
+            if cutoff_freq is None:
+                relaxed_threshold = ENERGY_THRESHOLD - 20
+                for i in range(len(frequencies) - 1, -1, -1):
+                    if MIN_FREQUENCY <= frequencies[i] <= MAX_FREQUENCY:
+                        if spectrum_db[i] > relaxed_threshold:
+                            cutoff_freq = frequencies[i]
+                            break
+            
+            return {
+                'cutoff_frequency': cutoff_freq,
+                'high_freq_energy': float(high_freq_energy),
+                'spectral_presence': float(spectral_presence),
+                'has_content_above_20k': bool(has_content_above_20k)
+            }
             
         except Exception as e:
-            print(f"Error calculando cutoff frequency para {self.file_path}: {e}")
-            return None
+            print(f"Error calculando estadísticas espectrales para {self.file_path}: {e}")
+            return {
+                'cutoff_frequency': None,
+                'high_freq_energy': None,
+                'spectral_presence': None,
+                'has_content_above_20k': False
+            }
     
     def calculate_dynamic_range(self) -> Optional[float]:
         """
@@ -178,8 +213,11 @@ class AudioAnalyzer:
             results['error'] = 'No se pudo cargar el archivo de audio'
             return results
         
-        # Calcular características
-        results['cutoff_frequency'] = self.calculate_cutoff_frequency()
+        # Calcular estadísticas espectrales (incluye cutoff_frequency)
+        spectral_stats = self.calculate_spectral_stats()
+        results.update(spectral_stats)
+        
+        # Calcular rango dinámico
         results['dynamic_range'] = self.calculate_dynamic_range()
         
         return results

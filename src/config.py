@@ -10,10 +10,12 @@ CUTOFF_THRESHOLDS = {
     'mp3_128': 16000,   # MP3 128kbps
     'flac': 20000,      # FLAC debe preservar todo el espectro
     'wav': 20000,       # WAV sin comprimir
+    'flac_fake_threshold': 16500,  # Por debajo de esto es definitivamente fake
 }
 
 # Umbrales de clasificación
-SUSPICIOUS_THRESHOLD = 1000  # Hz de margen para considerar "sospechoso"
+SUSPICIOUS_THRESHOLD = 2000  # Hz de margen para considerar "sospechoso"
+FLAC_SUSPICIOUS_THRESHOLD = 3000  # Hz de margen más amplio para FLAC
 
 # Extensiones de archivo soportadas
 SUPPORTED_FORMATS = ['.mp3', '.flac', '.wav']

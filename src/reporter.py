@@ -81,11 +81,14 @@ class Reporter:
             bitrate = result.get('bitrate')
             cutoff_freq = result.get('cutoff_frequency')
             dynamic_range = result.get('dynamic_range')
+            spectral_presence = result.get('spectral_presence')
             
             if bitrate:
                 self.console.print(f"   • Bitrate: {bitrate/1000:.0f} kbps")
             if cutoff_freq:
                 self.console.print(f"   • Frecuencia de corte: {cutoff_freq:.1f} Hz")
+            if spectral_presence is not None:
+                self.console.print(f"   • Presencia espectral (18-22kHz): {spectral_presence:.1f}%")
             if dynamic_range:
                 self.console.print(f"   • Rango dinámico: {dynamic_range:.1f} dB")
         
