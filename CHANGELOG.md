@@ -1,5 +1,58 @@
 # 📝 Changelog - Fake Music Hunter
 
+## Versión 2.1.0 - Docker e Interfaz Web (22 Nov 2026)
+
+### 🚀 Nuevas Características
+
+#### Interfaz Web
+- 🌐 **Aplicación web** (React + TypeScript) servida por el propio servicio en `http://localhost:8000`
+- 📁 **Análisis de la biblioteca**: navegador de carpetas con recuento por formato, opción recursiva y filtro de formatos
+- ⬆️ **Subida de archivos**: arrastrar y soltar, validación de formato y tamaño antes de subir y barra de progreso
+- ⏱️ **Progreso en tiempo real** (Server-Sent Events, con consulta periódica si la conexión falla) y cancelación conservando los resultados parciales
+- 📊 **Resultados**: resumen por clasificación, tabla con filtros, búsqueda, ordenación, paginación y detalle de todas las métricas
+- 💾 Descarga de reportes **CSV y JSON** con el mismo formato que la CLI
+- 🕘 **Historial** de análisis, aviso de conexión perdida, modo claro/oscuro y diseño adaptado a móvil
+
+#### API HTTP (FastAPI)
+- Trabajos de análisis en segundo plano sobre un pool de procesos, con concurrencia limitada (`FMH_WORKERS`)
+- Persistencia en SQLite: el historial sobrevive a reinicios y los trabajos interrumpidos se marcan como fallidos
+- Rutas confinadas a la biblioteca (`..`, rutas absolutas y enlaces simbólicos que salen de ella se rechazan)
+- Limpieza automática de subidas y de trabajos antiguos (`FMH_RETENTION_DAYS`)
+- Configuración con variables `FMH_*` y documentación OpenAPI en `/docs`
+
+#### Docker
+- 🐳 **Imagen única** con web, API y CLI: build multi-stage, usuario sin privilegios (UID 1000) y healthcheck
+- `docker-compose.yml` de ejemplo: música en solo lectura, historial en `./data` y puerto solo en `127.0.0.1`
+- Modo CLI dentro del contenedor: `docker run … fake-music-hunter cli -p /music -o /data/reporte.csv`
+- Imagen para **linux/amd64 y linux/arm64**
+- Imagen de desarrollo (`docker/dev.Dockerfile`) para ejecutar tests y CLI sin instalar nada en el equipo
+
+### 🔧 Refactorización
+
+- Nuevo núcleo `src/core` compartido por la CLI y la web (`analyze_file`, `AnalysisResult`, exportadores CSV/JSON), de modo que ambas clasifican exactamente igual
+- El analizador usa `logging` en lugar de `print`
+- Versión única (`2.1.0`) con la opción `--version` en la CLI
+- Eliminada la dependencia `pandas`, que no se usaba
+- Dependencias separadas en `requirements.txt` (CLI), `requirements-web.txt` y `requirements-dev.txt`
+
+### 🐛 Correcciones de Bugs
+
+- ✅ **Export CSV + JSON**: exportar el CSV convertía el bitrate a kbps en los propios resultados, así que el JSON exportado a continuación salía con el bitrate equivocado. Ahora los exportadores trabajan sobre copias
+- ✅ El CSV incluye la columna `spectral_presence`
+
+### 🧪 Tests
+
+- 53 tests: servicio de análisis con audio sintético generado en el momento, exportadores y API web (rutas, subidas, ciclo de vida de trabajos, cancelación, limpieza)
+- Verificado con una biblioteca real de 82 archivos (MP3, FLAC y WAV): la web y la CLI coinciden al 100 %
+
+### 📚 Documentación
+
+- README: secciones de Docker y API web
+- `frontend/README.md`: desarrollo de la interfaz con Docker
+- Workflow de GitHub Actions (tests, build web y build multi-arch), de momento con arranque manual
+
+---
+
 ## Versión 2.0 - Algoritmo Híbrido (16 Nov 2025)
 
 ### 🚀 Nuevas Características

@@ -31,7 +31,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Fake Music Hunter is a Python 3.13+ CLI (with a Docker + web UI in progress, see `openspec/changes/add-docker-web-ui/`) that detects fake or upscaled audio files (FLAC/WAV transcoded from lossy MP3, or MP3s labelled 320 kbps that came from lower bitrates) by spectral analysis. All docs, docstrings, comments, CLI help and user-facing messages are in **Spanish**. Keep new strings in Spanish.
+Fake Music Hunter is a Python 3.13+ CLI, plus a web UI and API packaged as a Docker image, that detects fake or upscaled audio files (FLAC/WAV transcoded from lossy MP3, or MP3s labelled 320 kbps that came from lower bitrates) by spectral analysis. All docs, docstrings, comments, CLI help and user-facing messages are in **Spanish**. Keep new strings in Spanish.
 
 ## Commands
 
@@ -116,6 +116,7 @@ Tests: `test_detector.py` uses hand-built analysis dicts. `test_service.py` gene
 
 ## Reference docs
 
+- `openspec/specs/` holds the current specs (analysis-jobs, audio-analysis-core, container-runtime, web-ui). Plan new changes with OpenSpec under `openspec/changes/`. Finished changes go to `openspec/changes/archive/`.
 - `ALGORITHM.md` has the algorithm rationale, diagrams and pseudocode.
 - `TESTING.md` covers how to check results against Spek spectrograms.
 - `CHANGELOG.md` records the v1 → v2 accuracy figures.

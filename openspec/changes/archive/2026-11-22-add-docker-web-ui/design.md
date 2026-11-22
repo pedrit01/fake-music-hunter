@@ -156,5 +156,5 @@ Cada paso se puede mergear por separado. Para revertir, basta con volver a la ve
 
 ## Open Questions
 
-- ¿Publicar la imagen en GHCR desde GitHub Actions al crear un tag? No afecta al diseño; se puede decidir al final.
+- ¿Publicar la imagen en GHCR desde GitHub Actions al crear un tag? No afecta al diseño; se puede decidir al final. **Decisión (22 nov 2026):** se pospone, porque la cuenta no tiene minutos de GitHub Actions. De momento la imagen se construye en local con `docker build`.
 - ¿Valor por defecto de `FMH_MAX_UPLOAD_MB`? Se propone 500 MB por archivo y se ajustará tras probar con FLAC hi-res reales.

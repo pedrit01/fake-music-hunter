@@ -53,9 +53,9 @@
 
 - [x] 5.1 Prueba end-to-end con la imagen final: analizar una carpeta real de la biblioteca desde la web y comparar las clasificaciones con las de la CLI sobre la misma carpeta, que deben coincidir al 100 %.
 - [ ] 5.2 (Opcional) Añadir un workflow de GitHub Actions con `pytest`, `npm run build` y `docker buildx build` para amd64/arm64, y verificar que pasa en un PR. — Workflow creado y validado en local (actionlint, pytest, `npm ci && npm run build`, buildx amd64/arm64). Sin verificar en GitHub: la cuenta no tiene minutos de Actions, así que queda con arranque manual (`workflow_dispatch`).
-- [ ] 5.3 Actualizar el CHANGELOG (v2.1.0: Docker, web, refactor del core y corrección del export CSV) y verificar que `openspec validate add-docker-web-ui --strict` pasa.
+- [x] 5.3 Actualizar el CHANGELOG (v2.1.0: Docker, web, refactor del core y corrección del export CSV) y verificar que `openspec validate add-docker-web-ui --strict` pasa.
 
 ## Workflow follow-up
 
 - Archivar la change con `/openspec-archive-change` tras revisar y mergear.
-- Decidir si se publica la imagen en GHCR al crear tags (Open Question de design.md).
+- Decidir si se publica la imagen en GHCR al crear tags (Open Question de design.md). Pospuesto: sin minutos de GitHub Actions.
