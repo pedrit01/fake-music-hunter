@@ -3,18 +3,33 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { api } from "../api/client";
-import type { Classification } from "../api/types";
+import type { Classification, Job } from "../api/types";
 import { StatusBadge } from "../components/Badges";
 import { ResultsTable } from "../components/ResultsTable";
 import { Summary } from "../components/Summary";
-import { describeSource, formatDate } from "../format";
+import { describeSource, formatDate, STATUS_LABELS } from "../format";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { isActive, useLiveJob } from "../hooks/useLiveJob";
+
+/**
+ * Título de la pestaña según el estado del trabajo. El porcentaje se redondea
+ * hacia abajo a entero: no cambia con cada archivo y no marca 100 % antes de terminar.
+ */
+function jobTitle(job: Job | undefined): string {
+  if (!job) return "Análisis";
+  if (job.status === "running") {
+    const percent = job.total > 0 ? Math.floor((job.processed / job.total) * 100) : 0;
+    return `${percent} % · Analizando…`;
+  }
+  return STATUS_LABELS[job.status];
+}
 
 export function JobPage() {
   const { jobId = "" } = useParams();
   const job = useLiveJob(jobId);
   const queryClient = useQueryClient();
   const [classification, setClassification] = useState<Classification[]>([]);
+  useDocumentTitle(jobTitle(job.data));
 
   const cancel = useMutation({
     mutationFn: () => api.cancelJob(jobId),

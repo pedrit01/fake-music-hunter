@@ -2,11 +2,13 @@ import { useState } from "react";
 
 import { LibraryBrowser } from "../components/LibraryBrowser";
 import { UploadPanel } from "../components/UploadPanel";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 type Tab = "library" | "upload";
 
 export function NewAnalysisPage() {
   const [tab, setTab] = useState<Tab>("library");
+  useDocumentTitle("Nuevo análisis");
 
   return (
     <>

@@ -52,7 +52,7 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 3. Título de la pestaña
 
-- [ ] 3.1 Crear `hooks/useDocumentTitle.ts` y usarlo en `NewAnalysisPage`, `HistoryPage` y `JobPage`:
+- [x] 3.1 Crear `hooks/useDocumentTitle.ts` y usarlo en `NewAnalysisPage`, `HistoryPage` y `JobPage`:
   - Formato `<página> · Fake Music Hunter`.
   - En un trabajo en curso, `NN % · Analizando…` con porcentaje entero.
   - Al terminar, el estado final.

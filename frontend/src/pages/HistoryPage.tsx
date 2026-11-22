@@ -6,11 +6,13 @@ import { api } from "../api/client";
 import { ACTIVE_STATUSES, CLASSIFICATIONS } from "../api/types";
 import { ClassificationBadge, StatusBadge } from "../components/Badges";
 import { describeSource, formatDate } from "../format";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 
 const PAGE_SIZE = 25;
 
 export function HistoryPage() {
   const [offset, setOffset] = useState(0);
+  useDocumentTitle("Historial");
   const jobs = useQuery({
     queryKey: ["jobs", offset],
     queryFn: () => api.jobs(offset, PAGE_SIZE),
