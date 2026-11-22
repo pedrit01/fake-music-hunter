@@ -16,13 +16,13 @@ const SEARCH_DELAY_MS = 300;
 const PROBLEMS_OPTION = "problems";
 
 // La columna "Clasificación" ordena por gravedad: fake, sospechoso, error, legítimo
-const COLUMNS: { key: ResultSortKey; label: string; hideOnMobile: boolean }[] = [
+const COLUMNS: { key: ResultSortKey; label: string; hideOnMobile: boolean; numeric?: boolean }[] = [
   { key: "file_name", label: "Archivo", hideOnMobile: false },
   { key: "severity", label: "Clasificación", hideOnMobile: false },
   { key: "format", label: "Formato", hideOnMobile: true },
-  { key: "bitrate", label: "Bitrate", hideOnMobile: true },
-  { key: "cutoff_frequency", label: "Corte", hideOnMobile: true },
-  { key: "spectral_presence", label: "Presencia 18-22 kHz", hideOnMobile: true },
+  { key: "bitrate", label: "Bitrate", hideOnMobile: true, numeric: true },
+  { key: "cutoff_frequency", label: "Corte", hideOnMobile: true, numeric: true },
+  { key: "spectral_presence", label: "Presencia 18-22 kHz", hideOnMobile: true, numeric: true },
 ];
 
 interface Props {
@@ -107,7 +107,8 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
           <thead>
             <tr>
               {COLUMNS.map((column) => (
-                <th key={column.key} className={column.hideOnMobile ? "hide-mobile" : ""}
+                <th key={column.key}
+                  className={[column.hideOnMobile && "hide-mobile", column.numeric && "number"].filter(Boolean).join(" ")}
                   aria-sort={sort.key === column.key ? (sort.order === "asc" ? "ascending" : "descending") : "none"}>
                   <button onClick={() => toggleSort(column.key)}>
                     {column.label} {sort.key === column.key ? (sort.order === "asc" ? "▲" : "▼") : ""}
@@ -134,9 +135,13 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
                         }}>
                         {result.file_name}
                       </button>
-                      <div className="small muted">{result.reason}</div>
+                      <div className="small muted result-reason">{result.reason}</div>
                     </td>
-                    <td><ClassificationBadge value={result.classification} /></td>
+                    <td>
+                      <ClassificationBadge value={result.classification} />
+                      {/* En móvil, la frecuencia de corte sustituye a las columnas ocultas */}
+                      <div className="small muted mobile-only">{formatNumber(result.cutoff_frequency, "Hz", 0)}</div>
+                    </td>
                     <td className="hide-mobile">{result.format.slice(1).toUpperCase()}</td>
                     <td className="hide-mobile number">{formatBitrate(result.bitrate)}</td>
                     <td className="hide-mobile number">{formatNumber(result.cutoff_frequency, "Hz", 0)}</td>

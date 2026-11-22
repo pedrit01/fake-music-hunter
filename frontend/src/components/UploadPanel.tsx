@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { uploadFiles } from "../api/client";
 import { formatBytes } from "../format";
 import { useHealth } from "../hooks/useHealth";
+import { Icon } from "./Icon";
 
 const ALLOWED_EXTENSIONS = [".mp3", ".flac", ".wav"];
 
@@ -74,7 +75,7 @@ export function UploadPanel() {
                 {!uploading && (
                   <button className="link-button" style={{ marginLeft: 8 }} aria-label={`Quitar ${item.file.name}`}
                     onClick={() => setSelected((current) => current.filter((_, i) => i !== index))}>
-                    Quitar
+                    <Icon name="x" /> Quitar
                   </button>
                 )}
               </span>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { api } from "../api/client";
+import { Icon } from "./Icon";
 import { useHealth } from "../hooks/useHealth";
 
 const FORMATS = [".flac", ".wav", ".mp3"];
@@ -55,19 +56,23 @@ export function LibraryBrowser() {
 
       {folder.data && (
         <>
-          <ul className="folder-list" aria-label="Subcarpetas">
-            {folder.data.parent !== null && (
-              <li><button onClick={() => setPath(folder.data.parent ?? "")}>⬆️ Subir un nivel</button></li>
-            )}
-            {folder.data.directories.map((directory) => (
-              <li key={directory.path}>
-                <button onClick={() => setPath(directory.path)}>📁 {directory.name}</button>
-              </li>
-            ))}
-            {folder.data.directories.length === 0 && (
-              <li className="muted" style={{ padding: "10px 14px" }}>No hay subcarpetas</li>
-            )}
-          </ul>
+          {folder.data.parent === null && folder.data.directories.length === 0 ? (
+            <p className="small muted">Esta carpeta no tiene subcarpetas.</p>
+          ) : (
+            <ul className="folder-list" aria-label="Subcarpetas">
+              {folder.data.parent !== null && (
+                <li><button onClick={() => setPath(folder.data.parent ?? "")}><Icon name="arrow-up" /> Subir un nivel</button></li>
+              )}
+              {folder.data.directories.map((directory) => (
+                <li key={directory.path}>
+                  <button onClick={() => setPath(directory.path)}><Icon name="folder" /> {directory.name}</button>
+                </li>
+              ))}
+              {folder.data.directories.length === 0 && (
+                <li className="muted" style={{ padding: "10px 14px" }}>No hay subcarpetas</li>
+              )}
+            </ul>
+          )}
           <p className="small muted">
             En esta carpeta: {filesHere} archivos de audio
             ({FORMATS.map((format) => `${audioCounts[format] ?? 0} ${format.slice(1).toUpperCase()}`).join(", ")})

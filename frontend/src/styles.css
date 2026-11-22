@@ -83,6 +83,7 @@ h2 { font-size: 1.15rem; }
   min-height: 56px;
 }
 .brand { font-weight: 700; color: var(--text); text-decoration: none; }
+.icon { vertical-align: -0.125em; flex-shrink: 0; }
 .brand small { color: var(--text-muted); font-weight: 400; margin-left: 6px; }
 .nav { display: flex; gap: 16px; }
 .nav a { color: var(--text-muted); text-decoration: none; padding: 4px 0; border-bottom: 2px solid transparent; }
@@ -223,7 +224,10 @@ tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--surface-muted); }
 td.file-name { word-break: break-word; }
 .row-toggle { border: none; background: none; padding: 0; color: inherit; text-align: left; word-break: break-word; }
-td.number { white-space: nowrap; }
+/* Cifras alineadas: a la derecha y con dígitos de ancho fijo */
+table { font-variant-numeric: tabular-nums; }
+td.number, th.number { text-align: right; white-space: nowrap; }
+.mobile-only { display: none; }
 .detail-cell { background: var(--surface-muted); }
 .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 8px 0 0; }
 .metrics dt { color: var(--text-muted); font-size: 0.8rem; }
@@ -233,6 +237,9 @@ td.number { white-space: nowrap; }
 /* En pantallas estrechas ocultamos columnas secundarias de las tablas */
 @media (max-width: 640px) {
   .hide-mobile { display: none; }
+  .mobile-only { display: block; }
+  /* El motivo queda en el detalle desplegable */
+  .result-reason { display: none; }
   .card { padding: 14px; }
   .main { padding-top: 16px; }
 }

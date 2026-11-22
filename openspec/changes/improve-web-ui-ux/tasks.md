@@ -72,13 +72,13 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 5. Móvil y pulido visual
 
-- [ ] 5.1 Por debajo de 640 px, la tabla de resultados oculta el motivo (`.result-reason`) y muestra la frecuencia de corte en la fila (`.mobile-only`). Verificar con una captura a 360 px:
+- [x] 5.1 Por debajo de 640 px, la tabla de resultados oculta el motivo (`.result-reason`) y muestra la frecuencia de corte en la fila (`.mobile-only`). Verificar con una captura a 360 px:
   - Cada resultado ocupa una fila.
   - No hay scroll horizontal.
   - La página de 50 resultados es mucho más corta que los ~6.800 px actuales.
   - El detalle desplegable sigue mostrando el motivo.
-- [ ] 5.2 Crear `components/Icon.tsx` con iconos SVG propios (`music`, `folder`, `arrow-up`, `x`), con `aria-hidden` y `currentColor`. Sustituir los emojis de `App.tsx`, `LibraryBrowser.tsx` y `UploadPanel.tsx`. Verificar que ya no quedan emojis en `frontend/src` con `grep -P "[\x{1F300}-\x{1FAFF}\x{2B06}]"` y que los iconos se ven en claro y en oscuro.
-- [ ] 5.3 En las tablas de resultados e historial:
+- [x] 5.2 Crear `components/Icon.tsx` con iconos SVG propios (`music`, `folder`, `arrow-up`, `x`), con `aria-hidden` y `currentColor`. Sustituir los emojis de `App.tsx`, `LibraryBrowser.tsx` y `UploadPanel.tsx`. Verificar que ya no quedan emojis en `frontend/src` con `grep -P "[\x{1F300}-\x{1FAFF}\x{2B06}]"` y que los iconos se ven en claro y en oscuro.
+- [x] 5.3 En las tablas de resultados e historial:
   - Alinear a la derecha las columnas numéricas y sus cabeceras, con `tabular-nums`.
   - En el navegador de carpetas, sustituir la lista vacía con borde por un texto discreto cuando no hay subcarpetas ni carpeta padre.
 

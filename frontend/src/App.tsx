@@ -1,6 +1,7 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 
 import { ConnectionBanner } from "./components/ConnectionBanner";
+import { Icon } from "./components/Icon";
 import { useHealth } from "./hooks/useHealth";
 import { HistoryPage } from "./pages/HistoryPage";
 import { JobPage } from "./pages/JobPage";
@@ -15,7 +16,7 @@ export default function App() {
       <header className="header">
         <div className="header-inner">
           <NavLink to="/" className="brand">
-            🎵 Fake Music Hunter
+            <Icon name="music" /> Fake Music Hunter
             {health.data && <small>v{health.data.version}</small>}
           </NavLink>
           <nav className="nav">
