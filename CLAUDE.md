@@ -51,6 +51,16 @@ docker run --rm -v "$PWD/frontend":/app -v fmh-node-modules:/app/node_modules -w
 
 `frontend/README.md` has the hot-reload dev setup (Vite proxying `/api` to an API container on a shared Docker network). To serve the built UI from FastAPI, add `-e FMH_STATIC_DIR=/app/frontend/dist` to the API command above.
 
+Production image (root `Dockerfile`): a multi-stage build that compiles the frontend in `node:22-alpine` and copies `dist/` into `python:3.13-slim` at `/app/static`. It installs only `requirements-web.txt`, runs as user `app` (UID 1000), declares `VOLUME /data` and has a Python healthcheck on `/api/health`. `docker/entrypoint.sh` takes `web` (the default: uvicorn with `--workers 1`), `cli <args>` (`python -m src.main`), or any other command, which it runs with `exec`. `.dockerignore` keeps tests, docs and openspec out of the build context.
+
+```bash
+docker build -t fake-music-hunter .
+MUSIC_DIR="$HOME/Soulseek Downloads/complete/ogalla/MUSICA" docker compose up -d     # http://localhost:8000, history in ./data (gitignored)
+docker run --rm -v "$HOME/Soulseek Downloads/complete/ogalla/MUSICA":/music:ro -v "$PWD/output":/data \
+  fake-music-hunter cli -p /music -o /data/r.csv
+docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .   # both build on 3.13
+```
+
 Dependencies are layered: `requirements.txt` (CLI runtime, the only one PyInstaller needs) ← `requirements-web.txt` (FastAPI, uvicorn, python-multipart, pydantic-settings) ← `requirements-dev.txt` (pytest, pytest-cov, httpx).
 
 Run the CLI as `python -m src.main` from the repo root. Modules import each other as `from src.x import ...`, so `python src/main.py` fails with an import error.

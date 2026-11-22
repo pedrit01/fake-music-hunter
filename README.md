@@ -17,9 +17,11 @@ Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudu
 - [Instalación](#instalación)
   - [Opción 1: Ejecutable Windows (Sin Python)](#opción-1-ejecutable-windows-sin-python)
   - [Opción 2: Desde Código Fuente](#opción-2-desde-código-fuente)
+  - [Opción 3: Docker (interfaz web)](#opción-3-docker-interfaz-web)
 - [Uso](#uso)
   - [Uso del Ejecutable](#uso-del-ejecutable-exe)
   - [Uso desde Código Fuente](#uso-desde-código-fuente)
+- [Docker](#-docker)
 - [API Web](#-api-web)
 - [Cómo Funciona](#-cómo-funciona)
   - [Algoritmo Híbrido](#algoritmo-híbrido-de-detección)
@@ -84,7 +86,17 @@ pip install -r requirements.txt
 
 **Requisitos:**
 - Python 3.13 o superior
-- Librerías: librosa, numpy, scipy, mutagen, rich, click, pandas, soundfile
+- Librerías: librosa, numpy, scipy, mutagen, rich, click, soundfile
+
+### Opción 3: Docker (interfaz web)
+
+Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker:
+
+```bash
+MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
+```
+
+Abre `http://localhost:8000`. Más detalles en la sección [Docker](#-docker).
 
 ## Uso
 
@@ -209,11 +221,70 @@ RESUMEN:
    🚫 Errores: 1 (1.3%)
 ```
 
+## 🐳 Docker
+
+La imagen incluye la interfaz web, la API y la CLI. Solo necesitas Docker; no hace falta instalar Python, ffmpeg ni Node.
+
+> ⚠️ **La aplicación no tiene autenticación.** Los ejemplos publican el puerto solo en `127.0.0.1`. No lo expongas a tu red o a Internet sin un proxy inverso con autenticación.
+
+### Con Docker Compose (recomendado)
+
+```bash
+MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
+```
+
+Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
+
+### Con docker run
+
+```bash
+docker build -t fake-music-hunter .
+
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro \
+  -v fmh-data:/data \
+  fake-music-hunter
+```
+
+### Modo CLI
+
+El mismo contenedor ejecuta la CLI con `cli` seguido de sus opciones habituales. Monta una carpeta escribible en `/data` para guardar los reportes:
+
+```bash
+docker run --rm -v "/ruta/a/tu/musica":/music:ro -v "$PWD/output":/data \
+  fake-music-hunter cli -p /music -o /data/reporte.csv -j /data/reporte.json
+```
+
+### Volúmenes
+
+| Ruta en el contenedor | Uso |
+|-----------------------|-----|
+| `/music` | Tu biblioteca de música. Móntala siempre en solo lectura (`:ro`); la aplicación nunca escribe en ella |
+| `/data` | Base de datos con el historial, subidas temporales y, en modo CLI, los reportes. Su contenido se puede borrar sin problema: solo hay resultados que se pueden regenerar |
+
+Las variables `FMH_*` de [Configuración](#configuración) se pasan con `-e` o en la sección `environment` de `docker-compose.yml`.
+
+### Permisos (UID/GID)
+
+El contenedor no se ejecuta como root, sino con el usuario `app` (UID 1000). Necesita poder **leer** `/music` y **escribir** en `/data`:
+
+- Con Docker Desktop u OrbStack en macOS los permisos se traducen solos.
+- Con un volumen con nombre (como `fmh-data` en el ejemplo de `docker run`), Docker lo crea con los permisos correctos y no hay que hacer nada.
+- En Linux, con una carpeta del host como `./data`, si tu usuario no es el 1000 ejecuta el contenedor con tu UID/GID: `--user "$(id -u):$(id -g)"` en `docker run`, o descomenta `user:` en `docker-compose.yml`. Crea antes la carpeta (`mkdir data`) para que sea tuya y no de root.
+
+### Memoria y `FMH_WORKERS`
+
+Cada archivo que se analiza a la vez ocupa un proceso con unos 200-300 MB de RAM. Por defecto se analizan `min(2, CPUs)` archivos en paralelo. Súbelo si tienes RAM y núcleos de sobra (por ejemplo, `FMH_WORKERS=4` con 2 GB libres) o bájalo a `1` en máquinas pequeñas como una Raspberry Pi.
+
+La imagen se publica para `linux/amd64` y `linux/arm64`: `docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .`
+
 ## 🌐 API Web
 
 Además de la CLI, Fake Music Hunter incluye un servicio HTTP (FastAPI) para lanzar análisis desde el navegador o desde otras herramientas. El análisis se hace en segundo plano y el progreso se puede seguir en tiempo real.
 
-### Arranque local
+### Arranque para desarrollo
+
+Para usarla, lo más sencillo es la [imagen Docker](#-docker). Para desarrollar, con el código montado:
 
 ```bash
 docker build -f docker/dev.Dockerfile -t fmh-dev .
@@ -338,11 +409,13 @@ fake-music-hunter/
 │   ├── detector.py     # Algoritmo híbrido de detección
 │   ├── reporter.py     # Generación de reportes (consola, CSV, JSON)
 │   └── config.py       # Configuración y umbrales
-├── tests/              # Tests unitarios (pytest)
-│   ├── __init__.py
-│   └── test_detector.py
+├── frontend/           # Interfaz web (React + TypeScript + Vite)
+├── docker/             # Entrypoint e imagen de desarrollo
+├── tests/              # Tests unitarios (pytest), incluidos los de la API en tests/web
 ├── output/             # Reportes generados
-├── requirements.txt    # Dependencias
+├── Dockerfile          # Imagen de producción (web + API + CLI)
+├── docker-compose.yml  # Despliegue de ejemplo
+├── requirements.txt    # Dependencias de la CLI (requirements-web/-dev amplían)
 ├── pytest.ini         # Configuración de pytest
 ├── README.md          # Este archivo
 ├── TESTING.md         # Guía de pruebas

@@ -42,16 +42,16 @@
 
 ## 4. Contenedor Docker
 
-- [ ] 4.1 Crear un `Dockerfile` multi-stage: build en `node:22-alpine` y runtime en `python:3.13-slim` con `ffmpeg` y `libsndfile1`, usuario `app` (UID 1000), `NUMBA_CACHE_DIR`, `EXPOSE 8000`, `VOLUME /data` y `HEALTHCHECK`. Añadir también `.dockerignore`. Verificar que `docker build -t fake-music-hunter .` termina sin errores.
-- [ ] 4.2 Crear `docker/entrypoint.sh` con los modos `web` (por defecto, uvicorn `--workers 1`), `cli …` y `exec "$@"`. Verificar que `docker run --rm -v <musica>:/music:ro -v ./out:/data fake-music-hunter cli -p /music -o /data/r.csv` genera `r.csv` y sale con código 0.
-- [ ] 4.3 Verificar en el contenedor que un MP3, un FLAC y un WAV de prueba se analizan sin `error`, que el proceso no corre como UID 0 (`docker exec … id -u`) y que `docker ps` muestra `healthy`.
-- [ ] 4.4 Crear `docker-compose.yml` de ejemplo: `${MUSIC_DIR}:/music:ro`, `./data:/data`, puerto `127.0.0.1:8000:8000`, variables `FMH_*` y `user:` comentado. Verificar con `docker compose up -d` que la web navega la biblioteca y que el historial sobrevive a `docker compose down && up`.
-- [ ] 4.5 Verificar el build multi-arch con `docker buildx build --platform linux/amd64,linux/arm64 .`. Si numba o llvmlite fallan en 3.13, aplicar el fallback a `python:3.12-slim` documentado en design.md.
-- [ ] 4.6 Documentar en el README la sección "Docker": run, compose, variables, volúmenes, permisos UID/GID, modo CLI, la advertencia de no exponer el servicio sin proxy con autenticación y el ajuste de `FMH_WORKERS` según la RAM. Verificar que los comandos documentados funcionan tal cual.
+- [x] 4.1 Crear un `Dockerfile` multi-stage: build en `node:22-alpine` y runtime en `python:3.13-slim` con `ffmpeg` y `libsndfile1`, usuario `app` (UID 1000), `NUMBA_CACHE_DIR`, `EXPOSE 8000`, `VOLUME /data` y `HEALTHCHECK`. Añadir también `.dockerignore`. Verificar que `docker build -t fake-music-hunter .` termina sin errores.
+- [x] 4.2 Crear `docker/entrypoint.sh` con los modos `web` (por defecto, uvicorn `--workers 1`), `cli …` y `exec "$@"`. Verificar que `docker run --rm -v <musica>:/music:ro -v ./out:/data fake-music-hunter cli -p /music -o /data/r.csv` genera `r.csv` y sale con código 0.
+- [x] 4.3 Verificar en el contenedor que un MP3, un FLAC y un WAV de prueba se analizan sin `error`, que el proceso no corre como UID 0 (`docker exec … id -u`) y que `docker ps` muestra `healthy`.
+- [x] 4.4 Crear `docker-compose.yml` de ejemplo: `${MUSIC_DIR}:/music:ro`, `./data:/data`, puerto `127.0.0.1:8000:8000`, variables `FMH_*` y `user:` comentado. Verificar con `docker compose up -d` que la web navega la biblioteca y que el historial sobrevive a `docker compose down && up`.
+- [x] 4.5 Verificar el build multi-arch con `docker buildx build --platform linux/amd64,linux/arm64 .`. Si numba o llvmlite fallan en 3.13, aplicar el fallback a `python:3.12-slim` documentado en design.md.
+- [x] 4.6 Documentar en el README la sección "Docker": run, compose, variables, volúmenes, permisos UID/GID, modo CLI, la advertencia de no exponer el servicio sin proxy con autenticación y el ajuste de `FMH_WORKERS` según la RAM. Verificar que los comandos documentados funcionan tal cual.
 
 ## 5. Integración y cierre
 
-- [ ] 5.1 Prueba end-to-end con la imagen final: analizar una carpeta real de la biblioteca desde la web y comparar las clasificaciones con las de la CLI sobre la misma carpeta, que deben coincidir al 100 %.
+- [x] 5.1 Prueba end-to-end con la imagen final: analizar una carpeta real de la biblioteca desde la web y comparar las clasificaciones con las de la CLI sobre la misma carpeta, que deben coincidir al 100 %.
 - [ ] 5.2 (Opcional) Añadir un workflow de GitHub Actions con `pytest`, `npm run build` y `docker buildx build` para amd64/arm64, y verificar que pasa en un PR.
 - [ ] 5.3 Actualizar el CHANGELOG (v2.1.0: Docker, web, refactor del core y corrección del export CSV) y verificar que `openspec validate add-docker-web-ui --strict` pasa.
 

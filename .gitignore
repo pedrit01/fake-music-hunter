@@ -55,3 +55,6 @@ fake-music-hunter*.exe
 # Frontend
 node_modules/
 frontend/dist/
+
+# Datos de docker compose (base de datos e historial)
+data/

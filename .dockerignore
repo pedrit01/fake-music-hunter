@@ -1,0 +1,20 @@
+# Solo se copian al contexto de build los archivos necesarios para la imagen.
+.git
+.gitignore
+.pytest_cache
+.coverage
+htmlcov
+**/__pycache__
+**/*.pyc
+venv
+env
+**/node_modules
+frontend/dist
+dist
+build
+output
+data
+tests
+openspec
+*.md
+.DS_Store

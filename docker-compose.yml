@@ -1,0 +1,27 @@
+# Ejemplo de despliegue con Docker Compose.
+#
+#   MUSIC_DIR=/ruta/a/tu/musica docker compose up -d
+#
+# Después abre http://localhost:8000. La carpeta de música se monta en solo
+# lectura; ./data guarda la base de datos con el historial de análisis.
+services:
+  fake-music-hunter:
+    build: .
+    image: fake-music-hunter
+    container_name: fake-music-hunter
+    restart: unless-stopped
+    # Solo accesible desde esta máquina. No lo expongas a la red sin un
+    # proxy inverso con autenticación: la aplicación no tiene login.
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - "${MUSIC_DIR:?Define MUSIC_DIR con la ruta de tu carpeta de música}:/music:ro"
+      - ./data:/data
+    environment:
+      # Archivos analizándose a la vez; cada uno usa unos 200-300 MB de RAM.
+      FMH_WORKERS: "2"
+      FMH_MAX_UPLOAD_MB: "500"
+      FMH_RETENTION_DAYS: "30"
+    # En Linux, si ./data pertenece a otro usuario, ejecuta el contenedor con
+    # tu UID/GID (consúltalos con `id -u` e `id -g`):
+    # user: "1000:1000"
