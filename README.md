@@ -2,7 +2,7 @@
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-4%2F4%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen.svg)](tests/)
 [![Accuracy](https://img.shields.io/badge/accuracy-85.7%25-success.svg)](ALGORITHM.md)
 
 Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudulentamente mediante análisis espectral.
@@ -90,9 +90,11 @@ pip install -r requirements.txt
 
 ### Opción 3: Docker (interfaz web)
 
-Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker:
+Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker y Git. La imagen se construye en tu equipo a partir de este repositorio:
 
 ```bash
+git clone https://github.com/pedrit01/fake-music-hunter.git
+cd fake-music-hunter
 MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
 ```
 
@@ -168,7 +170,7 @@ python -m src.main -p "C:\Music\Album" --no-recursive
 ### Ejemplo de Salida
 
 ```
-Fake Music Hunter v2.0
+Fake Music Hunter v2.1.0
 ══════════════════════════════════════════════════
 
 📁 Escaneando: C:\Music\Albums
@@ -227,15 +229,38 @@ La imagen incluye la interfaz web, la API y la CLI. Solo necesitas Docker; no ha
 
 > ⚠️ **La aplicación no tiene autenticación.** Los ejemplos publican el puerto solo en `127.0.0.1`. No lo expongas a tu red o a Internet sin un proxy inverso con autenticación.
 
+No hay una imagen publicada en ningún registro: todo lo necesario está en este repositorio y la imagen se construye en tu equipo.
+
+### Descargar el proyecto
+
+Clona el repositorio. Para quedarte en una versión concreta, usa su etiqueta (las tienes en [Releases](https://github.com/pedrit01/fake-music-hunter/releases)):
+
+```bash
+git clone https://github.com/pedrit01/fake-music-hunter.git
+cd fake-music-hunter
+git checkout Version-2.1.0   # opcional: fija la versión
+```
+
+Sin Git, descarga el ZIP del código fuente desde la página de la release y descomprímelo.
+
 ### Con Docker Compose (recomendado)
 
 ```bash
 MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
 ```
 
-Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
+La primera vez construye la imagen, lo que tarda unos minutos. Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
+
+Para actualizar a una versión nueva, baja los cambios y reconstruye la imagen:
+
+```bash
+git pull
+MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d --build
+```
 
 ### Con docker run
+
+Desde la carpeta del repositorio:
 
 ```bash
 docker build -t fake-music-hunter .
@@ -276,7 +301,7 @@ El contenedor no se ejecuta como root, sino con el usuario `app` (UID 1000). Nec
 
 Cada archivo que se analiza a la vez ocupa un proceso con unos 200-300 MB de RAM. Por defecto se analizan `min(2, CPUs)` archivos en paralelo. Súbelo si tienes RAM y núcleos de sobra (por ejemplo, `FMH_WORKERS=4` con 2 GB libres) o bájalo a `1` en máquinas pequeñas como una Raspberry Pi.
 
-La imagen se publica para `linux/amd64` y `linux/arm64`: `docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .`
+La imagen se puede construir para `linux/amd64` (PC, servidores) y `linux/arm64` (Mac con Apple Silicon, Raspberry Pi 4/5). `docker compose` y `docker build` construyen la de tu máquina; para las dos a la vez: `docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .`
 
 ## 🌐 API Web
 
@@ -576,7 +601,6 @@ Las contribuciones son bienvenidas. Para cambios importantes:
 **Áreas de mejora:**
 - Detección de artefactos específicos de codecs
 - Machine learning para patrones de conversión
-- GUI para visualización de resultados
 - Soporte para más formatos de audio
 
 ## 🐛 Reportar Issues
@@ -607,4 +631,4 @@ MIT
 
 ---
 
-**Última actualización**: 16 de noviembre de 2025 | **Versión**: 2.0
+**Última actualización**: 22 de noviembre de 2026 | **Versión**: 2.1.0
