@@ -314,10 +314,25 @@ La documentación interactiva (OpenAPI) queda en `http://localhost:8000/docs`.
 | POST | `/api/jobs/upload` | Analiza archivos subidos (`multipart/form-data`, campo `files`) |
 | GET | `/api/jobs` | Historial de trabajos (`offset`, `limit`) |
 | GET | `/api/jobs/{id}` | Estado y progreso: `queued`, `running`, `completed`, `failed` o `cancelled` |
-| GET | `/api/jobs/{id}/results` | Resultados, filtrables por `classification`, `format` y `q` (nombre), paginados |
+| GET | `/api/jobs/{id}/results` | Resultados paginados (`offset`, `limit`), filtrables por `classification` (uno o varios valores), `format` y `q` (nombre), y ordenables con `sort` y `order` (ver abajo) |
 | GET | `/api/jobs/{id}/events` | Progreso en tiempo real (Server-Sent Events: `progress` y `done`) |
 | GET | `/api/jobs/{id}/report.csv` · `report.json` | Descarga del reporte (mismo formato que la CLI) |
 | POST | `/api/jobs/{id}/cancel` | Cancela un trabajo en curso; los resultados ya obtenidos se conservan |
+
+**Filtrar y ordenar resultados.** `classification` se puede repetir para pedir varias clasificaciones a la vez. `sort` ordena todos los resultados en el servidor, antes de paginar:
+
+- Valores de `sort`: `severity` (fake → suspicious → error → legitimate), `file_name`, `format`, `bitrate`, `cutoff_frequency` o `spectral_presence`.
+- `order` puede ser `asc` (por defecto) o `desc`. Los valores ausentes quedan siempre al final.
+- Sin `sort`, los resultados salen en el orden en que se analizaron.
+- Un valor no admitido devuelve un error 422 que indica los valores válidos.
+
+```bash
+# Solo los problemas, los más graves primero
+curl "http://localhost:8000/api/jobs/<id>/results?classification=fake&classification=suspicious&classification=error&sort=severity"
+
+# Frecuencias de corte más bajas primero
+curl "http://localhost:8000/api/jobs/<id>/results?sort=cutoff_frequency&order=asc&limit=20"
+```
 
 Las rutas de la biblioteca son siempre relativas a su raíz; cualquier ruta que intente salir de ella (`..`, rutas absolutas o enlaces simbólicos) se rechaza. Los archivos subidos se borran al terminar su análisis.
 

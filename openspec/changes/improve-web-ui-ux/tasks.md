@@ -6,14 +6,14 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 1. API: filtro múltiple y ordenación en el servidor
 
-- [ ] 1.1 En `src/web/store.py`, ampliar `list_results`:
+- [x] 1.1 En `src/web/store.py`, ampliar `list_results`:
   - Aceptar una lista de clasificaciones (`IN`).
   - Aceptar una clave de orden y un sentido, traducidos con un diccionario fijo a expresiones SQL: `CASE` para gravedad y `json_extract` para las métricas.
   - Mantener los nulos al final y el desempate `file_name, idx`.
   - Sin clave de orden, mantener `ORDER BY idx`.
 
   Verificar con tests nuevos en `tests/web/test_settings_store_paths.py`: varias clasificaciones, orden por gravedad, orden por `cutoff_frequency` ascendente y descendente con nulos al final, y paginación sin filas repetidas.
-- [ ] 1.2 En `src/web/routes/jobs.py`, aceptar en `GET /api/jobs/{id}/results`:
+- [x] 1.2 En `src/web/routes/jobs.py`, aceptar en `GET /api/jobs/{id}/results`:
   - `classification` como lista de valores válidos.
   - `sort` (lista blanca) y `order` (`asc`/`desc`).
 
@@ -24,7 +24,7 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
   - Una petición sin parámetros nuevos responde igual que antes.
 
   Todos los tests existentes deben seguir pasando.
-- [ ] 1.3 Documentar los parámetros nuevos en la tabla de endpoints del README y en la sección `web/` de `CLAUDE.md`. Verificar con `curl` contra la API en Docker que los ejemplos del README funcionan tal cual.
+- [x] 1.3 Documentar los parámetros nuevos en la tabla de endpoints del README y en la sección `web/` de `CLAUDE.md`. Verificar con `curl` contra la API en Docker que los ejemplos del README funcionan tal cual.
 
 ## 2. Tabla de resultados: problemas primero
 

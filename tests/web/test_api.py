@@ -186,6 +186,49 @@ def test_results_filters_and_pagination(client):
     assert page["total"] == 4 and len(page["items"]) == 2
 
 
+def test_results_filter_by_several_classifications(client):
+    job_id = client.post("/api/jobs", json={"path": ""}).json()["id"]
+    wait_for_job(client, job_id)
+
+    response = client.get(f"/api/jobs/{job_id}/results",
+                          params=[("classification", "fake"), ("classification", "suspicious")])
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 2
+    assert {r["file_name"] for r in body["items"]} == {"fake.flac", "sospechoso.mp3"}
+
+
+def test_results_sorted_by_severity_and_name(client):
+    job_id = client.post("/api/jobs", json={"path": ""}).json()["id"]
+    wait_for_job(client, job_id)
+    url = f"/api/jobs/{job_id}/results"
+
+    by_severity = client.get(url, params={"sort": "severity"}).json()["items"]
+    assert [r["file_name"] for r in by_severity] == ["fake.flac", "sospechoso.mp3", "buena.flac", "suelta.wav"]
+
+    by_name_desc = client.get(url, params={"sort": "file_name", "order": "desc"}).json()["items"]
+    assert [r["file_name"] for r in by_name_desc] == ["suelta.wav", "sospechoso.mp3", "fake.flac", "buena.flac"]
+
+    # El orden se aplica antes de paginar
+    second_page = client.get(url, params={"sort": "severity", "offset": 2, "limit": 2}).json()["items"]
+    assert [r["file_name"] for r in second_page] == ["buena.flac", "suelta.wav"]
+
+
+def test_results_reject_unknown_classification_or_sort(client):
+    job_id = client.post("/api/jobs", json={"path": ""}).json()["id"]
+    wait_for_job(client, job_id)
+    url = f"/api/jobs/{job_id}/results"
+
+    # Cada error indica los valores admitidos
+    cases = [({"classification": "rara"}, "'fake'"), ({"sort": "data"}, "'severity'"),
+             ({"order": "sideways"}, "'desc'")]
+    for params, admitted in cases:
+        response = client.get(url, params=params)
+        assert response.status_code == 422, params
+        assert admitted in response.json()["detail"][0]["msg"]
+
+
 def test_job_history(client):
     first = client.post("/api/jobs", json={"path": "Vacia"}).json()["id"]
     second = client.post("/api/jobs", json={"path": "Albums"}).json()["id"]

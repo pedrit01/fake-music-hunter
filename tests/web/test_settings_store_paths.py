@@ -71,6 +71,82 @@ def test_store_saves_results_and_progress(tmp_path):
     assert [r["file_name"] for r in mp3s] == ["b.mp3"]
 
 
+def _store_with_results(tmp_path, results):
+    """Crea un trabajo con los resultados dados, en ese orden de llegada."""
+    store = JobStore(tmp_path / "db.sqlite3")
+    job = store.create_job("library", {"path": ""})
+    for idx, result in enumerate(results, start=1):
+        store.add_result(job["id"], idx, result, processed=idx, counts={})
+    return store, job["id"]
+
+
+def _names(results):
+    return [r["file_name"] for r in results]
+
+
+def test_store_filters_by_several_classifications(tmp_path):
+    store, job_id = _store_with_results(tmp_path, [
+        _result("a.flac", "legitimate"), _result("b.flac", "fake"),
+        _result("c.mp3", "suspicious"), _result("d.wav", "error"),
+    ])
+
+    problems, total = store.list_results(job_id, classification=["fake", "suspicious"])
+
+    assert total == 2
+    assert _names(problems) == ["b.flac", "c.mp3"]
+
+
+def test_store_sorts_by_severity_then_name(tmp_path):
+    store, job_id = _store_with_results(tmp_path, [
+        _result("z.flac", "legitimate"), _result("y.mp3", "suspicious"), _result("b.wav", "error"),
+        _result("x.flac", "fake"), _result("a.flac", "legitimate"), _result("w.mp3", "fake"),
+    ])
+
+    ordered, _ = store.list_results(job_id, sort="severity")
+
+    assert _names(ordered) == ["w.mp3", "x.flac", "y.mp3", "b.wav", "a.flac", "z.flac"]
+
+
+@pytest.mark.parametrize("order, expected", [
+    ("asc", ["low.mp3", "mid.mp3", "high.mp3", "missing.mp3"]),
+    ("desc", ["high.mp3", "mid.mp3", "low.mp3", "missing.mp3"]),
+])
+def test_store_sorts_by_metric_with_missing_values_last(tmp_path, order, expected):
+    def with_cutoff(name, cutoff):
+        return {**_result(name, "legitimate"), "cutoff_frequency": cutoff}
+
+    store, job_id = _store_with_results(tmp_path, [
+        with_cutoff("mid.mp3", 18000), with_cutoff("missing.mp3", None),
+        with_cutoff("high.mp3", 20000), with_cutoff("low.mp3", 16000),
+    ])
+
+    ordered, _ = store.list_results(job_id, sort="cutoff_frequency", order=order)
+
+    assert _names(ordered) == expected
+
+
+def test_store_sorted_pages_do_not_repeat_or_skip_rows(tmp_path):
+    # Muchos empates en la clave de orden: el desempate debe ser estable
+    results = [_result(f"{i:02d}.flac", "fake" if i % 3 == 0 else "legitimate") for i in range(25)]
+    store, job_id = _store_with_results(tmp_path, results)
+
+    pages = [store.list_results(job_id, sort="severity", offset=offset, limit=10)[0]
+             for offset in (0, 10, 20)]
+    names = [name for page in pages for name in _names(page)]
+
+    assert len(names) == 25
+    assert sorted(names) == sorted(_names(results))
+
+
+def test_store_rejects_unknown_sort(tmp_path):
+    store, job_id = _store_with_results(tmp_path, [_result("a.flac", "fake")])
+
+    with pytest.raises(ValueError):
+        store.list_results(job_id, sort="data; DROP TABLE results")
+    with pytest.raises(ValueError):
+        store.list_results(job_id, sort="file_name", order="sideways")
+
+
 def test_store_survives_restart_and_marks_interrupted_jobs(tmp_path):
     database = tmp_path / "db.sqlite3"
     store = JobStore(database)

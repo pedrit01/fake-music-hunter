@@ -7,7 +7,7 @@ import io
 import json
 import shutil
 from pathlib import Path, PurePath
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import Response, StreamingResponse
@@ -26,6 +26,9 @@ router = APIRouter(prefix="/jobs", tags=["trabajos"])
 
 # Tamaño de cada bloque al guardar una subida en disco
 UPLOAD_CHUNK_BYTES = 1024 * 1024
+# Valores admitidos para filtrar y ordenar resultados (FastAPI responde 422 con otros)
+ClassificationParam = Literal["legitimate", "fake", "suspicious", "error"]
+SortParam = Literal["severity", "file_name", "format", "bitrate", "cutoff_frequency", "spectral_presence"]
 # Cada cuánto se manda un comentario por SSE para que los proxies no corten
 SSE_KEEPALIVE_SECONDS = 15
 
@@ -111,9 +114,14 @@ def get_job(job_id: str, store: JobStore = Depends(get_store)) -> dict:
 @router.get("/{job_id}/results", response_model=ResultPage, summary="Resultados de un trabajo")
 def list_results(
     job_id: str,
-    classification: Optional[str] = None,
+    classification: Optional[list[ClassificationParam]] = Query(
+        None, description="Una o varias clasificaciones: ?classification=fake&classification=suspicious"),
     format: Optional[str] = Query(None, description="Extensión, p. ej. flac o .flac"),
     q: Optional[str] = Query(None, description="Texto a buscar en el nombre del archivo"),
+    sort: Optional[SortParam] = Query(
+        None, description="Orden en el servidor; severity = fake, suspicious, error, legitimate. "
+                          "Sin él, orden de llegada"),
+    order: Literal["asc", "desc"] = Query("asc", description="Sentido del orden"),
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     store: JobStore = Depends(get_store),
@@ -121,7 +129,7 @@ def list_results(
     get_job_or_404(store, job_id)
     file_format = _normalize_formats([format])[0] if format else None
     items, total = store.list_results(job_id, classification=classification, file_format=file_format,
-                                      search=q, offset=offset, limit=limit)
+                                      search=q, offset=offset, limit=limit, sort=sort, order=order)
     return ResultPage(items=items, total=total, offset=offset, limit=limit)
 
 

@@ -11,7 +11,7 @@ import threading
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Union
 
 from src.config import CLASS_ERROR, CLASS_FAKE, CLASS_LEGITIMATE, CLASS_SUSPICIOUS
 
@@ -59,6 +59,23 @@ CREATE TABLE IF NOT EXISTS results (
 
 CREATE INDEX IF NOT EXISTS idx_results_classification ON results (job_id, classification);
 """
+
+
+# Orden de los resultados: cada clave admitida se traduce a una expresión SQL
+# fija, de modo que el texto que envía el cliente nunca llega a la consulta.
+SEVERITY_ORDER_SQL = (
+    f"CASE classification WHEN '{CLASS_FAKE}' THEN 0 WHEN '{CLASS_SUSPICIOUS}' THEN 1 "
+    f"WHEN '{CLASS_ERROR}' THEN 2 ELSE 3 END"
+)
+RESULT_SORT_EXPRESSIONS = {
+    "severity": SEVERITY_ORDER_SQL,
+    "file_name": "file_name",
+    "format": "format",
+    "bitrate": "json_extract(data, '$.bitrate')",
+    "cutoff_frequency": "json_extract(data, '$.cutoff_frequency')",
+    "spectral_presence": "json_extract(data, '$.spectral_presence')",
+}
+SORT_ORDERS = ("asc", "desc")
 
 
 def empty_counts() -> dict[str, int]:
@@ -184,15 +201,22 @@ class JobStore:
                 (processed, json.dumps(counts), job_id),
             )
 
-    def list_results(self, job_id: str, classification: Optional[str] = None,
+    def list_results(self, job_id: str, classification: Union[str, Sequence[str], None] = None,
                      file_format: Optional[str] = None, search: Optional[str] = None,
-                     offset: int = 0, limit: Optional[int] = None) -> tuple[list[dict[str, Any]], int]:
-        """Devuelve una página de resultados filtrados y el total que cumple el filtro."""
+                     offset: int = 0, limit: Optional[int] = None,
+                     sort: Optional[str] = None, order: str = "asc") -> tuple[list[dict[str, Any]], int]:
+        """
+        Devuelve una página de resultados filtrados y el total que cumple el filtro.
+
+        `classification` admite una clasificación o varias. Sin `sort`, los
+        resultados salen en orden de llegada.
+        """
         conditions = ["job_id = ?"]
         values: list[Any] = [job_id]
-        if classification:
-            conditions.append("classification = ?")
-            values.append(classification)
+        classifications = [classification] if isinstance(classification, str) else list(classification or [])
+        if classifications:
+            conditions.append(f"classification IN ({_placeholders(classifications)})")
+            values.extend(classifications)
         if file_format:
             conditions.append("format = ?")
             values.append(file_format)
@@ -200,13 +224,14 @@ class JobStore:
             conditions.append("file_name LIKE ?")
             values.append(f"%{search}%")
         where = " AND ".join(conditions)
+        order_by = _results_order_by(sort, order)
 
         with self._lock:
             total = self._connection.execute(
                 f"SELECT COUNT(*) FROM results WHERE {where}", values
             ).fetchone()[0]
             rows = self._connection.execute(
-                f"SELECT data FROM results WHERE {where} ORDER BY idx LIMIT ? OFFSET ?",
+                f"SELECT data FROM results WHERE {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
                 (*values, -1 if limit is None else limit, offset),
             ).fetchall()
         return [json.loads(row["data"]) for row in rows], total
@@ -219,5 +244,22 @@ def _job_from_row(row: sqlite3.Row) -> dict[str, Any]:
     return job
 
 
-def _placeholders(values: tuple) -> str:
+def _results_order_by(sort: Optional[str], order: str) -> str:
+    """
+    Construye el ORDER BY de los resultados.
+
+    Los valores ausentes van siempre al final, y el desempate por nombre e
+    índice hace el orden estable, para que la paginación no repita ni salte filas.
+    """
+    if sort is None:
+        return "idx"
+    if sort not in RESULT_SORT_EXPRESSIONS:
+        raise ValueError(f"Orden no admitido: {sort}")
+    if order not in SORT_ORDERS:
+        raise ValueError(f"Sentido de orden no admitido: {order}")
+    expression = RESULT_SORT_EXPRESSIONS[sort]
+    return f"({expression}) IS NULL, {expression} {order.upper()}, file_name, idx"
+
+
+def _placeholders(values: Sequence) -> str:
     return ", ".join("?" for _ in values)
