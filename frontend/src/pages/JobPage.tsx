@@ -13,12 +13,14 @@ import { isActive, useLiveJob } from "../hooks/useLiveJob";
 
 /**
  * Título de la pestaña según el estado del trabajo. El porcentaje se redondea
- * hacia abajo a entero: no cambia con cada archivo y no marca 100 % antes de terminar.
+ * hacia abajo a entero, para que no cambie con cada archivo.
  */
 function jobTitle(job: Job | undefined): string {
   if (!job) return "Análisis";
   if (job.status === "running") {
-    const percent = job.total > 0 ? Math.floor((job.processed / job.total) * 100) : 0;
+    // Con todos los archivos procesados el trabajo aún tarda un instante en cerrarse:
+    // nos quedamos en 99 % para no mostrar "100 % · Analizando…"
+    const percent = job.total > 0 ? Math.min(99, Math.floor((job.processed / job.total) * 100)) : 0;
     return `${percent} % · Analizando…`;
   }
   return STATUS_LABELS[job.status];

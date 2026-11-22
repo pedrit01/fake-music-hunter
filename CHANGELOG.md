@@ -13,12 +13,21 @@
 - 💾 Descarga de reportes **CSV y JSON** con el mismo formato que la CLI
 - 🕘 **Historial** de análisis, aviso de conexión perdida, modo claro/oscuro y diseño adaptado a móvil
 
+#### Mejoras de la interfaz (revisión UI/UX)
+- 🔝 **Problemas primero**: los resultados se ordenan por gravedad (Fake → Sospechoso → Error → Legítimo) y el filtro gana la opción **"Solo problemas"**
+- ↕️ La ordenación por columnas se resuelve en el servidor, así que se aplica a todos los resultados y no solo a la página visible
+- 🏷️ **Título de la pestaña** con el progreso del análisis en curso (`45 % · Analizando…`) y su estado al terminar
+- ⌨️ **Accesibilidad**: detalle de cada resultado operable con teclado, formatos agrupados bajo "Formatos", zonas de toque de al menos 24 px, barras de progreso etiquetadas y respeto a "reducir movimiento"
+- 📱 **Móvil**: cada resultado en una fila compacta con la frecuencia de corte; el motivo pasa al detalle desplegable
+- ✨ **Pulido visual**: iconos SVG propios en lugar de emojis, cifras alineadas a la derecha y de ancho fijo, y tarjetas del resumen con 0 atenuadas
+
 #### API HTTP (FastAPI)
 - Trabajos de análisis en segundo plano sobre un pool de procesos, con concurrencia limitada (`FMH_WORKERS`)
 - Persistencia en SQLite: el historial sobrevive a reinicios y los trabajos interrumpidos se marcan como fallidos
 - Rutas confinadas a la biblioteca (`..`, rutas absolutas y enlaces simbólicos que salen de ella se rechazan)
 - Limpieza automática de subidas y de trabajos antiguos (`FMH_RETENTION_DAYS`)
 - Configuración con variables `FMH_*` y documentación OpenAPI en `/docs`
+- `GET /api/jobs/{id}/results` admite varias clasificaciones a la vez (`classification=fake&classification=suspicious`) y ordenación en el servidor con `sort` (`severity`, `file_name`, `format`, `bitrate`, `cutoff_frequency`, `spectral_presence`) y `order` (`asc`/`desc`). Los valores no admitidos devuelven 422
 
 #### Docker
 - 🐳 **Imagen única** con web, API y CLI: build multi-stage, usuario sin privilegios (UID 1000) y healthcheck
@@ -42,7 +51,7 @@
 
 ### 🧪 Tests
 
-- 53 tests: servicio de análisis con audio sintético generado en el momento, exportadores y API web (rutas, subidas, ciclo de vida de trabajos, cancelación, limpieza)
+- 62 tests: servicio de análisis con audio sintético generado en el momento, exportadores y API web (rutas, subidas, ciclo de vida de trabajos, cancelación, limpieza, filtros y ordenación de resultados)
 - Verificado con una biblioteca real de 82 archivos (MP3, FLAC y WAV): la web y la CLI coinciden al 100 %
 
 ### 📚 Documentación

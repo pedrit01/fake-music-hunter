@@ -86,8 +86,8 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 6. Verificación final
 
-- [ ] 6.1 Ejecutar `pytest` completo y `npm run build` en Docker sin errores. Reconstruir la imagen con `docker build -t fake-music-hunter .` y repetir la prueba E2E de Playwright contra ella, actualizada a los nuevos comportamientos. Revisar las capturas de escritorio, oscuro y móvil.
-- [ ] 6.2 Añadir la entrada correspondiente al `CHANGELOG.md` (mejoras de la interfaz y parámetros nuevos de la API). Verificar que `openspec validate improve-web-ui-ux --strict` pasa.
+- [x] 6.1 Ejecutar `pytest` completo y `npm run build` en Docker sin errores. Reconstruir la imagen con `docker build -t fake-music-hunter .` y repetir la prueba E2E de Playwright contra ella, actualizada a los nuevos comportamientos. Revisar las capturas de escritorio, oscuro y móvil.
+- [x] 6.2 Añadir la entrada correspondiente al `CHANGELOG.md` (mejoras de la interfaz y parámetros nuevos de la API). Verificar que `openspec validate improve-web-ui-ux --strict` pasa.
 
 ## Workflow follow-up
 
