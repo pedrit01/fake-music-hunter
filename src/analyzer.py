@@ -2,6 +2,8 @@
 Módulo para análisis espectral de archivos de audio
 """
 
+import logging
+
 import librosa
 import numpy as np
 from pathlib import Path
@@ -11,6 +13,8 @@ from src.config import (
     ANALYSIS_DURATION, SAMPLE_RATE, FFT_SIZE, 
     HOP_LENGTH, MIN_FREQUENCY, MAX_FREQUENCY, ENERGY_THRESHOLD
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AudioAnalyzer:
@@ -45,7 +49,7 @@ class AudioAnalyzer:
             )
             return True
         except Exception as e:
-            print(f"Error cargando {self.file_path}: {e}")
+            logger.warning("Error cargando %s: %s", self.file_path, e)
             return False
     
     def extract_metadata(self) -> Dict:
@@ -71,7 +75,7 @@ class AudioAnalyzer:
             return metadata
             
         except Exception as e:
-            print(f"Error extrayendo metadatos de {self.file_path}: {e}")
+            logger.warning("Error extrayendo metadatos de %s: %s", self.file_path, e)
             return {}
     
     def calculate_spectral_stats(self) -> Dict[str, Optional[float]]:
@@ -151,7 +155,7 @@ class AudioAnalyzer:
             }
             
         except Exception as e:
-            print(f"Error calculando estadísticas espectrales para {self.file_path}: {e}")
+            logger.warning("Error calculando estadísticas espectrales para %s: %s", self.file_path, e)
             return {
                 'cutoff_frequency': None,
                 'high_freq_energy': None,
@@ -189,7 +193,7 @@ class AudioAnalyzer:
             return float(dynamic_range)
             
         except Exception as e:
-            print(f"Error calculando dynamic range para {self.file_path}: {e}")
+            logger.warning("Error calculando dynamic range para %s: %s", self.file_path, e)
             return None
     
     def analyze(self) -> Dict:

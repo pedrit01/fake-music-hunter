@@ -33,8 +33,19 @@ Deberías ver `(.venv)` al inicio de tu prompt de PowerShell:
 
 ```powershell
 python -m pip install -r requirements.txt
-python -m pip install pytest pytest-cov
+python -m pip install -r requirements-dev.txt
 ```
+
+## 🐳 Ejecutar las Pruebas en Docker (recomendado)
+
+No requiere Python ni dependencias en tu máquina:
+
+```bash
+docker build -f docker/dev.Dockerfile -t fmh-dev .
+docker run --rm -v "$PWD":/app fmh-dev pytest
+```
+
+Solo hay que reconstruir la imagen cuando cambian los `requirements*.txt`; el código se monta en `/app`.
 
 ## 🧪 Ejecutar las Pruebas
 

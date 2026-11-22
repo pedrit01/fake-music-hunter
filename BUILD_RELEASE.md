@@ -2,6 +2,8 @@
 
 ## Crear Release Ejecutable para Windows
 
+> **Nota (v2.1):** el build no cambia. `src/main.py` solo usa el núcleo de análisis (`src/core/`) y nunca importa la parte web (`src/web/`), así que PyInstaller no incluye FastAPI ni sus dependencias. Basta con instalar `requirements.txt` en el venv.
+
 ### ⚠️ IMPORTANTE: Usar el Python del Entorno Virtual
 
 PyInstaller **DEBE** ejecutarse con el Python del entorno virtual donde están instaladas todas las dependencias. Si usas solo `python`, puede ejecutarse el Python del sistema que no tiene las librerías necesarias.

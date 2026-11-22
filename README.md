@@ -122,7 +122,7 @@ Si instalaste desde el código fuente:
 
 **Análisis básico:**
 ```bash
-python src/main.py -p "C:\Music"
+python -m src.main -p "C:\Music"
 ```
 
 **Opciones avanzadas:**
@@ -278,6 +278,7 @@ Analizar presencia espectral en rango 18-22 kHz
 fake-music-hunter/
 ├── src/
 │   ├── main.py         # Punto de entrada CLI
+│   ├── core/           # Servicio de análisis compartido (resultado, análisis, reportes)
 │   ├── scanner.py      # Escaneo de directorios
 │   ├── analyzer.py     # Análisis espectral (STFT, presencia espectral)
 │   ├── detector.py     # Algoritmo híbrido de detección
@@ -297,7 +298,14 @@ fake-music-hunter/
 
 ## 🧪 Tests
 
-El proyecto incluye tests unitarios con pytest:
+El proyecto incluye tests unitarios con pytest. La forma recomendada de ejecutarlos es en Docker, sin instalar nada en tu máquina:
+
+```bash
+docker build -f docker/dev.Dockerfile -t fmh-dev .
+docker run --rm -v "$PWD":/app fmh-dev pytest
+```
+
+O bien, con un entorno virtual propio (`pip install -r requirements-dev.txt`):
 
 ```bash
 # Ejecutar todos los tests

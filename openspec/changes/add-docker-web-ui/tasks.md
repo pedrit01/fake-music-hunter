@@ -2,16 +2,17 @@
 
 ## 1. Núcleo de análisis reutilizable y CLI
 
-- [ ] 1.1 Crear `src/core/` con `AnalysisResult` (dataclass con todos los campos de la spec, `None` en métricas no calculables, `to_dict()`) y verificar con un test unitario que `to_dict()` incluye todas las claves.
-- [ ] 1.2 Implementar `core.service.analyze_file`, que encapsula `AudioAnalyzer` + `FakeDetector` y convierte las excepciones en un resultado `error`. Verificar con `tests/test_service.py`, que usa WAVs sintéticos en `tmp_path`: banda completa → `legitimate`, paso bajo a 16 kHz → `fake`, bytes corruptos → `error`.
-- [ ] 1.3 Implementar `core.service.analyze_many(paths, on_progress, should_cancel)` y verificar con un test que emite N progresos crecientes, que un archivo corrupto no detiene el lote y que `should_cancel` deja de procesar los pendientes.
-- [ ] 1.4 Crear `core.reports.to_csv/to_json` como funciones puras: bitrate en kbps en el CSV y numérico en el JSON, y CSV con presencia espectral incluida. Verificar con `tests/test_reports.py` que CSV seguido de JSON no muta los resultados.
-- [ ] 1.5 Sustituir los `print()` de `src/analyzer.py` por `logging` y verificar que `grep -n "print(" src/analyzer.py` no devuelve nada.
-- [ ] 1.6 Refactorizar `src/main.py` y `src/reporter.py` para que usen `core.service` y `core.reports`, manteniendo las opciones, la salida y los marcadores ASCII. Verificar que `python -m src.main -p <carpeta de prueba> -v -o r.csv -j r.json` produce la misma salida que antes y que `pytest` sigue en verde, incluidos los 4 tests del detector.
-- [ ] 1.7 Unificar la versión en `src/__init__.__version__ = "2.1.0"` y usarla en la cabecera de la CLI. Verificar que `python -m src.main --help` y la cabecera muestran 2.1.0.
-- [ ] 1.8 Quitar `pandas` de `requirements.txt` y añadir `requirements-dev.txt` (pytest, pytest-cov, httpx). Verificar que un venv limpio instala y pasa `pytest`.
-- [ ] 1.9 Comprobar que `src/main.py` no importa nada de `src/web` (`python -c "import src.main, sys; assert 'fastapi' not in sys.modules"`) y anotar en BUILD_RELEASE.md que el build PyInstaller no cambia.
-- [ ] 1.10 Actualizar el README y CLAUDE.md: cambiar `python src/main.py` por `python -m src.main` y describir la nueva capa `src/core/`. Verificar que los comandos documentados funcionan tal cual.
+- [x] 1.1 Crear `docker/dev.Dockerfile` (python:3.13-slim + ffmpeg + libsndfile1 + requirements de desarrollo) para ejecutar tests y CLI sin instalar nada en el host, y documentar en CLAUDE.md el comando `docker build -f docker/dev.Dockerfile -t fmh-dev . && docker run --rm -v "$PWD":/app fmh-dev pytest`. Verificar que el contenedor ejecuta `pytest` con los 4 tests del detector en verde.
+- [x] 1.2 Crear `src/core/` con `AnalysisResult` (dataclass con todos los campos de la spec, `None` en métricas no calculables, `to_dict()`) y verificar con un test unitario que `to_dict()` incluye todas las claves.
+- [x] 1.3 Implementar `core.service.analyze_file`, que encapsula `AudioAnalyzer` + `FakeDetector` y convierte las excepciones en un resultado `error`. Verificar con `tests/test_service.py`, que usa WAVs sintéticos en `tmp_path`: banda completa → `legitimate`, paso bajo a 16 kHz → `fake`, bytes corruptos → `error`.
+- [x] 1.4 Implementar `core.service.analyze_many(paths, on_progress, should_cancel)` y verificar con un test que emite N progresos crecientes, que un archivo corrupto no detiene el lote y que `should_cancel` deja de procesar los pendientes.
+- [x] 1.5 Crear `core.reports.to_csv/to_json` como funciones puras: bitrate en kbps en el CSV y numérico en el JSON, y CSV con presencia espectral incluida. Verificar con `tests/test_reports.py` que CSV seguido de JSON no muta los resultados.
+- [x] 1.6 Sustituir los `print()` de `src/analyzer.py` por `logging` y verificar que `grep -n "print(" src/analyzer.py` no devuelve nada.
+- [x] 1.7 Refactorizar `src/main.py` y `src/reporter.py` para que usen `core.service` y `core.reports`, manteniendo las opciones, la salida y los marcadores ASCII. Verificar que `python -m src.main -p <carpeta de prueba> -v -o r.csv -j r.json` produce la misma salida que antes y que `pytest` sigue en verde, incluidos los 4 tests del detector.
+- [x] 1.8 Unificar la versión en `src/__init__.__version__ = "2.1.0"` y usarla en la cabecera de la CLI. Verificar que `python -m src.main --version` y la cabecera muestran 2.1.0.
+- [x] 1.9 Quitar `pandas` de `requirements.txt` y añadir `requirements-dev.txt` (pytest, pytest-cov, httpx). Verificar que la imagen de desarrollo se reconstruye desde cero y pasa `pytest`.
+- [x] 1.10 Comprobar que `src/main.py` no importa nada de `src/web` (`python -c "import src.main, sys; assert 'fastapi' not in sys.modules"`) y anotar en BUILD_RELEASE.md que el build PyInstaller no cambia.
+- [x] 1.11 Actualizar el README y CLAUDE.md: cambiar `python src/main.py` por `python -m src.main` y describir la nueva capa `src/core/`. Verificar que los comandos documentados funcionan tal cual.
 
 ## 2. API web y trabajos de análisis
 
