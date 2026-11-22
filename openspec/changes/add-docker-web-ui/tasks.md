@@ -30,15 +30,15 @@
 
 ## 3. Interfaz web (SPA)
 
-- [ ] 3.1 Crear `frontend/` con Vite + React + TypeScript, React Router y TanStack Query, con proxy `/api` → `:8000` en dev. Verificar que `npm run dev` carga la app y `npm run build` y `tsc --noEmit` pasan.
-- [ ] 3.2 Crear el cliente API tipado (`src/api/types.ts`, `client.ts`) y el layout base en español con tokens CSS y colores de clasificación con etiqueta textual. Verificar con `tsc --noEmit` y revisión visual en escritorio y a 360 px.
-- [ ] 3.3 Implementar la vista "Nuevo análisis → Biblioteca": navegador de carpetas con migas de pan y recuentos, opciones recursivo/formatos y botón analizar que redirige a `/jobs/:id`, más un aviso cuando no hay biblioteca. Verificar manualmente con una biblioteca de prueba y con la API sin biblioteca.
-- [ ] 3.4 Implementar la vista "Nuevo análisis → Subir": drag & drop y selector múltiple, validación previa de extensión y tamaño, barra de progreso con XHR y errores de la API visibles. Verificar subiendo archivos válidos, un `.ogg` y uno demasiado grande.
-- [ ] 3.5 Implementar la vista de trabajo `/jobs/:id`: progreso en vivo por SSE con polling de respaldo, resumen por clasificación con porcentajes, botón cancelar y descargas CSV/JSON. Verificar con un trabajo real que el contador avanza sin recargar y que cancelar conserva los resultados parciales.
-- [ ] 3.6 Implementar la tabla de resultados: filtros de clasificación y formato en servidor, búsqueda por nombre, ordenación, paginación y un panel de detalle con todas las métricas y la razón. Verificar que el recuento con filtro "Fake" coincide con el resumen.
-- [ ] 3.7 Implementar el historial `/jobs` (estado, origen, fecha y resumen) y el aviso de conexión con reintento cuando la API cae. Verificar parando la API con la vista abierta.
-- [ ] 3.8 Servir `frontend/dist` desde FastAPI (`FMH_STATIC_DIR`) con fallback SPA a `index.html` para las rutas que no son `/api`. Verificar con un test de `TestClient` que `/jobs/abc` devuelve el HTML y `/api/unknown` devuelve 404 JSON.
-- [ ] 3.9 Documentar en `frontend/README.md` el desarrollo del frontend (dev, build, proxy) y verificar que los comandos funcionan tal cual.
+- [x] 3.1 Crear `frontend/` con Vite + React + TypeScript, React Router y TanStack Query, con proxy `/api` → `:8000` en dev. Verificar que `npm run dev` carga la app y `npm run build` y `tsc --noEmit` pasan.
+- [x] 3.2 Crear el cliente API tipado (`src/api/types.ts`, `client.ts`) y el layout base en español con tokens CSS y colores de clasificación con etiqueta textual. Verificar con `tsc --noEmit` y revisión visual en escritorio y a 360 px.
+- [x] 3.3 Implementar la vista "Nuevo análisis → Biblioteca": navegador de carpetas con migas de pan y recuentos, opciones recursivo/formatos y botón analizar que redirige a `/jobs/:id`, más un aviso cuando no hay biblioteca. Verificar manualmente con una biblioteca de prueba y con la API sin biblioteca.
+- [x] 3.4 Implementar la vista "Nuevo análisis → Subir": drag & drop y selector múltiple, validación previa de extensión y tamaño, barra de progreso con XHR y errores de la API visibles. Verificar subiendo archivos válidos, un `.ogg` y uno demasiado grande.
+- [x] 3.5 Implementar la vista de trabajo `/jobs/:id`: progreso en vivo por SSE con polling de respaldo, resumen por clasificación con porcentajes, botón cancelar y descargas CSV/JSON. Verificar con un trabajo real que el contador avanza sin recargar y que cancelar conserva los resultados parciales.
+- [x] 3.6 Implementar la tabla de resultados: filtros de clasificación y formato en servidor, búsqueda por nombre, ordenación, paginación y un panel de detalle con todas las métricas y la razón. Verificar que el recuento con filtro "Fake" coincide con el resumen.
+- [x] 3.7 Implementar el historial `/jobs` (estado, origen, fecha y resumen) y el aviso de conexión con reintento cuando la API cae. Verificar parando la API con la vista abierta.
+- [x] 3.8 Servir `frontend/dist` desde FastAPI (`FMH_STATIC_DIR`) con fallback SPA a `index.html` para las rutas que no son `/api`. Verificar con un test de `TestClient` que `/jobs/abc` devuelve el HTML y `/api/unknown` devuelve 404 JSON.
+- [x] 3.9 Documentar en `frontend/README.md` el desarrollo del frontend (dev, build, proxy) y verificar que los comandos funcionan tal cual.
 
 ## 4. Contenedor Docker
 

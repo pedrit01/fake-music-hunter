@@ -11,6 +11,7 @@ class Health(BaseModel):
     status: str
     version: str
     library_available: bool
+    max_upload_mb: float
 
 
 class LibraryDirectory(BaseModel):

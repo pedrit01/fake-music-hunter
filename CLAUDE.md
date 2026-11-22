@@ -42,6 +42,15 @@ docker run --rm -v "$PWD":/app -v "$HOME/Soulseek Downloads/complete/ogalla/MUSI
   fmh-dev python -m src.main -p /music -v
 ```
 
+Frontend (`frontend/`, React + TypeScript + Vite). `node_modules` lives in the `fmh-node-modules` Docker volume, never on the host:
+
+```bash
+docker run --rm -v "$PWD/frontend":/app -v fmh-node-modules:/app/node_modules -w /app node:22-alpine npm install
+docker run --rm -v "$PWD/frontend":/app -v fmh-node-modules:/app/node_modules -w /app node:22-alpine npm run build   # tsc + vite → frontend/dist
+```
+
+`frontend/README.md` has the hot-reload dev setup (Vite proxying `/api` to an API container on a shared Docker network). To serve the built UI from FastAPI, add `-e FMH_STATIC_DIR=/app/frontend/dist` to the API command above.
+
 Dependencies are layered: `requirements.txt` (CLI runtime, the only one PyInstaller needs) ← `requirements-web.txt` (FastAPI, uvicorn, python-multipart, pydantic-settings) ← `requirements-dev.txt` (pytest, pytest-cov, httpx).
 
 Run the CLI as `python -m src.main` from the repo root. Modules import each other as `from src.x import ...`, so `python src/main.py` fails with an import error.
@@ -66,7 +75,9 @@ Windows build (see BUILD_RELEASE.md): `python -m PyInstaller --onefile --name fa
   - `paths.safe_resolve` confines every client path to `FMH_LIBRARY_ROOT`, rejecting `..`, absolute paths and symlinks that leave it. Library results show paths relative to the root.
   - Uploads stream to `$FMH_DATA_DIR/uploads/<job_id>/` with a per-file size limit and are deleted when the job ends. `cleanup.run_cleanup` (hourly) deletes jobs past `FMH_RETENTION_DAYS` and orphaned upload folders.
   - `settings.Settings` reads `FMH_*` env vars (pydantic-settings).
+  - `spa.mount_spa` serves `FMH_STATIC_DIR` (the built frontend) with an `index.html` fallback. It's registered after the API routers, and `/api/*` misses still return a JSON 404.
   - Routes that start jobs must be `async def`, because `JobManager.start` creates an asyncio task on the running loop.
+- **frontend/src**: `api/types.ts` mirrors `src/web/schemas.py` and `AnalysisResult` by hand, so update it when an API model changes. `hooks/useLiveJob` follows a job over SSE and falls back to polling every 2 s. `hooks/useHealth` polls `/api/health` every 10 s and drives the "Sin conexión" banner. Requests time out (5 s for health, 15 s otherwise) so a dead server is detected. All UI text is Spanish, and numbers are formatted with the `es-ES` locale in `format.ts`.
 - **analyzer.py** loads only the first `ANALYSIS_DURATION` (30 s), resampled to mono at 44.1 kHz with librosa. It averages the STFT magnitude over time, converts it to dB relative to the peak, and returns a flat dict: mutagen metadata (`format`, `bitrate` in bps, …) plus `cutoff_frequency`, `spectral_presence` (% of bins in 18–22 kHz above −70 dB), `high_freq_energy`, `has_content_above_20k` (any bin in 20–22 kHz above −65 dB) and `dynamic_range`. If loading fails it sets an `error` key instead of raising. Errors are logged with `logging`, not `print`.
 - **detector.py** holds only static methods that dispatch on `format`:
   - FLAC/WAV use the "hybrid" algorithm. The fast path is `has_content_above_20k` → legitimate. Otherwise it classifies by `spectral_presence`: >30 legitimate, 15–30 checks energy > −60 dB, 5–15 suspicious, <5 is fake only if the cutoff is < 16500 Hz and suspicious otherwise. WAV reuses `detect_flac`.

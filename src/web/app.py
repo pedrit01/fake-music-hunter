@@ -20,6 +20,7 @@ from src.web.cleanup import run_cleanup
 from src.web.jobs import AnalyzeFunction, JobManager
 from src.web.routes import jobs, library, system
 from src.web.settings import Settings
+from src.web.spa import mount_spa
 from src.web.store import JobStore
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,14 @@ def create_app(settings: Optional[Settings] = None, executor: Optional[Executor]
     app.include_router(system.router, prefix="/api")
     app.include_router(library.router, prefix="/api")
     app.include_router(jobs.router, prefix="/api")
+
+    # La interfaz web va al final: su ruta comodín no debe tapar la API
+    if settings.static_dir is not None:
+        if (settings.static_dir / "index.html").is_file():
+            mount_spa(app, settings.static_dir)
+        else:
+            logger.warning("FMH_STATIC_DIR=%s no contiene index.html; solo se sirve la API",
+                           settings.static_dir)
     return app
 
 

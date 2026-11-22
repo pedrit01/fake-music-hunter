@@ -51,3 +51,7 @@ htmlcov/
 *.spec
 build.ps1
 fake-music-hunter*.exe
+
+# Frontend
+node_modules/
+frontend/dist/

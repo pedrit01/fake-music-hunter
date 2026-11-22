@@ -26,6 +26,7 @@ def test_health(client):
     assert body["status"] == "ok"
     assert body["version"] == "2.1.0"
     assert body["library_available"] is True
+    assert body["max_upload_mb"] == 1
 
 
 def test_health_and_library_without_library(make_client, tmp_path):
@@ -331,3 +332,30 @@ def test_cleanup_removes_expired_jobs_and_orphan_uploads(client, settings):
                            ("2000-01-01T00:00:00+00:00", job_id))
     run_cleanup(store, manager, settings.uploads_dir, retention_days=30)
     assert client.get(f"/api/jobs/{job_id}").status_code == 404
+
+
+# --- Interfaz web (SPA) -------------------------------------------------------------
+
+def test_spa_is_served_with_fallback(make_client, settings, tmp_path):
+    static = tmp_path / "dist"
+    (static / "assets").mkdir(parents=True)
+    (static / "index.html").write_text("<!doctype html><title>Fake Music Hunter</title>")
+    (static / "assets" / "app.js").write_text("console.log('hola')")
+    client = make_client(app_settings=settings.model_copy(update={"static_dir": static}))
+
+    root = client.get("/")
+    assert root.status_code == 200 and "Fake Music Hunter" in root.text
+    # Una ruta interna de la SPA devuelve index.html para que funcione al recargar
+    job_page = client.get("/jobs/abc")
+    assert job_page.status_code == 200 and job_page.headers["content-type"].startswith("text/html")
+    assert client.get("/assets/app.js").text == "console.log('hola')"
+    # La API sigue respondiendo JSON, también para rutas que no existen
+    assert client.get("/api/health").json()["status"] == "ok"
+    unknown = client.get("/api/unknown")
+    assert unknown.status_code == 404 and unknown.json()["detail"]
+    # No se puede salir de la carpeta estática
+    assert "Fake Music Hunter" in client.get("/../../etc/passwd").text
+
+
+def test_without_static_dir_only_api_is_served(client):
+    assert client.get("/").status_code == 404
