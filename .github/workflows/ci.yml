@@ -2,10 +2,14 @@
 # de la imagen Docker para amd64 y arm64 (sin publicarla).
 name: CI
 
+# Desactivado de momento: solo se lanza a mano desde la pestaña Actions
+# (la cuenta no tiene minutos de Actions). Para activarlo en cada push y PR:
+#   on:
+#     push:
+#       branches: [main, develop]
+#     pull_request:
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
+  workflow_dispatch:
 
 # Si llega un push nuevo a la misma rama, se cancela la ejecución anterior.
 concurrency:

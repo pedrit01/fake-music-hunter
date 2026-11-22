@@ -73,7 +73,7 @@ docker run --rm -v "$HOME/Soulseek Downloads/complete/ogalla/MUSICA":/music:ro -
 docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .   # both build on 3.13
 ```
 
-CI (`.github/workflows/ci.yml`, on pushes to main/develop and on PRs) runs three jobs: pytest inside the `docker/dev.Dockerfile` image (the same command as locally), `npm ci && npm run build` for the frontend, and a `docker buildx` build for amd64/arm64 without pushing. Lint the workflow with `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
+CI (`.github/workflows/ci.yml`) is manual-only (`workflow_dispatch`) for now, because the account has no Actions minutes. The commented-out `on:` block in the file restores the push/PR triggers. It runs three jobs: pytest inside the `docker/dev.Dockerfile` image (the same command as locally), `npm ci && npm run build` for the frontend, and a `docker buildx` build for amd64/arm64 without pushing. Lint the workflow with `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
 
 Dependencies are layered: `requirements.txt` (CLI runtime, the only one PyInstaller needs) ← `requirements-web.txt` (FastAPI, uvicorn, python-multipart, pydantic-settings) ← `requirements-dev.txt` (pytest, pytest-cov, httpx).
 
