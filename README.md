@@ -20,6 +20,7 @@ Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudu
 - [Uso](#uso)
   - [Uso del Ejecutable](#uso-del-ejecutable-exe)
   - [Uso desde Código Fuente](#uso-desde-código-fuente)
+- [API Web](#-api-web)
 - [Cómo Funciona](#-cómo-funciona)
   - [Algoritmo Híbrido](#algoritmo-híbrido-de-detección)
   - [Métricas Analizadas](#métricas-analizadas)
@@ -208,6 +209,58 @@ RESUMEN:
    🚫 Errores: 1 (1.3%)
 ```
 
+## 🌐 API Web
+
+Además de la CLI, Fake Music Hunter incluye un servicio HTTP (FastAPI) para lanzar análisis desde el navegador o desde otras herramientas. El análisis se hace en segundo plano y el progreso se puede seguir en tiempo real.
+
+### Arranque local
+
+```bash
+docker build -f docker/dev.Dockerfile -t fmh-dev .
+docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD":/app \
+  -v "/ruta/a/tu/musica":/music:ro -e FMH_DATA_DIR=/tmp/fmh-data \
+  fmh-dev uvicorn src.web.app:create_app --factory --host 0.0.0.0 --port 8000
+```
+
+O sin Docker, con `pip install -r requirements-web.txt`:
+
+```bash
+FMH_LIBRARY_ROOT="/ruta/a/tu/musica" FMH_DATA_DIR=./data \
+  uvicorn src.web.app:create_app --factory --port 8000
+```
+
+La documentación interactiva (OpenAPI) queda en `http://localhost:8000/docs`.
+
+> ⚠️ La API no tiene autenticación. Úsala solo en tu red local o detrás de un proxy inverso con autenticación.
+
+### Endpoints
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/health` | Estado del servicio, versión y si hay biblioteca configurada |
+| GET | `/api/library?path=<carpeta>` | Subcarpetas y número de archivos de audio de una carpeta de la biblioteca |
+| POST | `/api/jobs` | Analiza una carpeta: `{"path": "Albums/2024", "recursive": true, "formats": ["flac"]}` |
+| POST | `/api/jobs/upload` | Analiza archivos subidos (`multipart/form-data`, campo `files`) |
+| GET | `/api/jobs` | Historial de trabajos (`offset`, `limit`) |
+| GET | `/api/jobs/{id}` | Estado y progreso: `queued`, `running`, `completed`, `failed` o `cancelled` |
+| GET | `/api/jobs/{id}/results` | Resultados, filtrables por `classification`, `format` y `q` (nombre), paginados |
+| GET | `/api/jobs/{id}/events` | Progreso en tiempo real (Server-Sent Events: `progress` y `done`) |
+| GET | `/api/jobs/{id}/report.csv` · `report.json` | Descarga del reporte (mismo formato que la CLI) |
+| POST | `/api/jobs/{id}/cancel` | Cancela un trabajo en curso; los resultados ya obtenidos se conservan |
+
+Las rutas de la biblioteca son siempre relativas a su raíz; cualquier ruta que intente salir de ella (`..`, rutas absolutas o enlaces simbólicos) se rechaza. Los archivos subidos se borran al terminar su análisis.
+
+### Configuración
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `FMH_LIBRARY_ROOT` | `/music` | Carpeta de música que se puede navegar y analizar (solo lectura) |
+| `FMH_DATA_DIR` | `/data` | Carpeta escribible: base de datos de trabajos y subidas temporales |
+| `FMH_PORT` | `8000` | Puerto del servicio |
+| `FMH_WORKERS` | `min(2, CPUs)` | Archivos analizándose a la vez (cada proceso usa ~200-300 MB de RAM) |
+| `FMH_MAX_UPLOAD_MB` | `500` | Tamaño máximo de cada archivo subido |
+| `FMH_RETENTION_DAYS` | `30` | Días que se conservan los trabajos terminados |
+
 ## 🔬 Cómo Funciona
 
 ### Algoritmo Híbrido de Detección
@@ -279,6 +332,7 @@ fake-music-hunter/
 ├── src/
 │   ├── main.py         # Punto de entrada CLI
 │   ├── core/           # Servicio de análisis compartido (resultado, análisis, reportes)
+│   ├── web/            # API FastAPI, trabajos en segundo plano y persistencia SQLite
 │   ├── scanner.py      # Escaneo de directorios
 │   ├── analyzer.py     # Análisis espectral (STFT, presencia espectral)
 │   ├── detector.py     # Algoritmo híbrido de detección

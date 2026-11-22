@@ -34,11 +34,13 @@ def analyze_file(path: Path, display_path: Optional[str] = None) -> AnalysisResu
 
     Args:
         path: Ruta real del archivo en disco.
-        display_path: Ruta que se mostrará en el resultado. Sirve para no
-            exponer rutas internas (por ejemplo, en archivos subidos).
+        display_path: Ruta que se mostrará en el resultado (y de la que sale
+            el nombre). Sirve para no exponer rutas internas, por ejemplo
+            en archivos subidos.
     """
     path = Path(path)
     shown_path = display_path or str(path)
+    shown_name = Path(shown_path).name
 
     try:
         analysis = AudioAnalyzer(path).analyze()
@@ -46,7 +48,7 @@ def analyze_file(path: Path, display_path: Optional[str] = None) -> AnalysisResu
     except Exception as error:
         logger.exception("Fallo inesperado analizando %s", path)
         return AnalysisResult(
-            file_name=path.name,
+            file_name=shown_name,
             file_path=shown_path,
             format=path.suffix.lower(),
             classification=CLASS_ERROR,
@@ -54,7 +56,7 @@ def analyze_file(path: Path, display_path: Optional[str] = None) -> AnalysisResu
         )
 
     return AnalysisResult(
-        file_name=path.name,
+        file_name=shown_name,
         file_path=shown_path,
         # Si mutagen no pudo leer los metadatos, el formato sale de la extensión
         format=analysis.get("format") or path.suffix.lower(),

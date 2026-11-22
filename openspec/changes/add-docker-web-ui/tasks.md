@@ -16,17 +16,17 @@
 
 ## 2. API web y trabajos de análisis
 
-- [ ] 2.1 Crear `requirements-web.txt` (incluye `requirements.txt` + fastapi, uvicorn[standard], python-multipart, pydantic-settings) y `src/web/settings.py` con las variables `FMH_*` y sus valores por defecto. Verificar con un test que las variables de entorno sobrescriben los valores por defecto.
-- [ ] 2.2 Implementar `src/web/store.py` sobre SQLite (tablas `jobs` y `results`, índices) con migración al arrancar y marcado de los trabajos en curso como `failed` tras un reinicio. Verificar con tests de store en `tmp_path`.
-- [ ] 2.3 Implementar `safe_resolve` y el filtro de escaneo confinado a `FMH_LIBRARY_ROOT`. Verificar con tests que `..`, rutas absolutas y symlinks que salen de la raíz devuelven 400 o quedan excluidos.
-- [ ] 2.4 Implementar `JobManager` con un `ProcessPoolExecutor` compartido (`FMH_WORKERS`), ventana acotada de envíos, inserción incremental de resultados, cancelación y estados `queued/running/completed/failed/cancelled`. Verificar con tests que usan un executor síncrono inyectado: ciclo completo, cancelación a mitad y concurrencia máxima respetada.
-- [ ] 2.5 Crear `create_app()` con `GET /api/health` (estado, versión, `library_available`) y `GET /api/library`. Verificar con `TestClient` las respuestas con y sin biblioteca configurada.
-- [ ] 2.6 Implementar `POST /api/jobs` (carpeta, recursive, formats) y `POST /api/jobs/upload`: streaming a `/data/uploads/<id>/`, validación de extensión, límite `FMH_MAX_UPLOAD_MB` con 413 y nombres saneados. Verificar con tests: subida válida, `.ogg` rechazado, archivo demasiado grande sin restos en disco y carpeta vacía que termina `completed` con 0 resultados.
-- [ ] 2.7 Implementar `GET /api/jobs`, `GET /api/jobs/{id}` (404 si no existe), `GET /api/jobs/{id}/results` con filtros y paginación y `POST /api/jobs/{id}/cancel`. Verificar con tests de filtros por clasificación y formato y de cancelación que conserva los resultados parciales.
-- [ ] 2.8 Implementar el SSE `GET /api/jobs/{id}/events` (eventos `progress` y `done`). Verificar con un test que lee el stream de un trabajo pequeño y recibe N progresos y un `done`.
-- [ ] 2.9 Implementar la descarga `report.csv` y `report.json` con `core.reports` y los `Content-Type`/`Content-Disposition` correctos. Verificar con un test que su contenido coincide con el que exporta la CLI.
-- [ ] 2.10 Implementar la limpieza: borrar las subidas en un `finally` al terminar el trabajo y una tarea periódica de retención (`FMH_RETENTION_DAYS`) y huérfanos. Verificar con tests que no quedan archivos tras `completed`, `failed` o `cancelled` y que la retención borra los trabajos antiguos.
-- [ ] 2.11 Documentar en el README la sección "API" (endpoints, variables `FMH_*` y el arranque local con `uvicorn src.web.app:app`) y verificar que el comando arranca y `/docs` muestra OpenAPI.
+- [x] 2.1 Crear `requirements-web.txt` (incluye `requirements.txt` + fastapi, uvicorn[standard], python-multipart, pydantic-settings) y `src/web/settings.py` con las variables `FMH_*` y sus valores por defecto. Verificar con un test que las variables de entorno sobrescriben los valores por defecto.
+- [x] 2.2 Implementar `src/web/store.py` sobre SQLite (tablas `jobs` y `results`, índices) con migración al arrancar y marcado de los trabajos en curso como `failed` tras un reinicio. Verificar con tests de store en `tmp_path`.
+- [x] 2.3 Implementar `safe_resolve` y el filtro de escaneo confinado a `FMH_LIBRARY_ROOT`. Verificar con tests que `..`, rutas absolutas y symlinks que salen de la raíz devuelven 400 o quedan excluidos.
+- [x] 2.4 Implementar `JobManager` con un `ProcessPoolExecutor` compartido (`FMH_WORKERS`), ventana acotada de envíos, inserción incremental de resultados, cancelación y estados `queued/running/completed/failed/cancelled`. Verificar con tests que usan un executor síncrono inyectado: ciclo completo, cancelación a mitad y concurrencia máxima respetada.
+- [x] 2.5 Crear `create_app()` con `GET /api/health` (estado, versión, `library_available`) y `GET /api/library`. Verificar con `TestClient` las respuestas con y sin biblioteca configurada.
+- [x] 2.6 Implementar `POST /api/jobs` (carpeta, recursive, formats) y `POST /api/jobs/upload`: streaming a `/data/uploads/<id>/`, validación de extensión, límite `FMH_MAX_UPLOAD_MB` con 413 y nombres saneados. Verificar con tests: subida válida, `.ogg` rechazado, archivo demasiado grande sin restos en disco y carpeta vacía que termina `completed` con 0 resultados.
+- [x] 2.7 Implementar `GET /api/jobs`, `GET /api/jobs/{id}` (404 si no existe), `GET /api/jobs/{id}/results` con filtros y paginación y `POST /api/jobs/{id}/cancel`. Verificar con tests de filtros por clasificación y formato y de cancelación que conserva los resultados parciales.
+- [x] 2.8 Implementar el SSE `GET /api/jobs/{id}/events` (eventos `progress` y `done`). Verificar con un test que lee el stream de un trabajo pequeño y recibe N progresos y un `done`.
+- [x] 2.9 Implementar la descarga `report.csv` y `report.json` con `core.reports` y los `Content-Type`/`Content-Disposition` correctos. Verificar con un test que su contenido coincide con el que exporta la CLI.
+- [x] 2.10 Implementar la limpieza: borrar las subidas en un `finally` al terminar el trabajo y una tarea periódica de retención (`FMH_RETENTION_DAYS`) y huérfanos. Verificar con tests que no quedan archivos tras `completed`, `failed` o `cancelled` y que la retención borra los trabajos antiguos.
+- [x] 2.11 Documentar en el README la sección "API" (endpoints, variables `FMH_*` y el arranque local con `uvicorn src.web.app:create_app --factory`) y verificar que el comando arranca y `/docs` muestra OpenAPI.
 
 ## 3. Interfaz web (SPA)
 

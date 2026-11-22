@@ -94,6 +94,7 @@ def test_display_path_hides_real_path(full_band_wav):
     result = analyze_file(full_band_wav, display_path="mi_cancion.wav")
 
     assert result.file_path == "mi_cancion.wav"
+    assert result.file_name == "mi_cancion.wav"
 
 
 def test_analyze_many_reports_progress_and_survives_errors(full_band_wav, corrupt_wav, low_passed_wav):

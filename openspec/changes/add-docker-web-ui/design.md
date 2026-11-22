@@ -39,7 +39,7 @@ Los requisitos están en `specs/` (audio-analysis-core, analysis-jobs, web-ui, c
 - *Alternativa*: que la web reutilice `Reporter` directamente. Se descarta porque está acoplado a `rich.Console` y a estado mutable.
 
 ### 2. FastAPI + uvicorn, en `src/web/`
-`src/web/app.py` (factory `create_app(settings)`), `routes/`, `jobs.py`, `store.py` y `settings.py`. La configuración llega por variables de entorno con prefijo `FMH_` (pydantic-settings).
+`src/web/app.py` (factory `create_app(settings)`; se arranca con `uvicorn src.web.app:create_app --factory`, para que importar el módulo no lea la configuración ni cree carpetas), `routes/`, `jobs.py`, `store.py` y `settings.py`. La configuración llega por variables de entorno con prefijo `FMH_` (pydantic-settings).
 
 `src/main.py` no importa nada de `src/web`, así que PyInstaller sigue sin incluir FastAPI. Las dependencias web van en `requirements-web.txt`, que incluye `requirements.txt`.
 
@@ -117,7 +117,7 @@ Al arrancar, los trabajos que estén en `queued` o `running` pasan a `failed` co
    - `ENV NUMBA_CACHE_DIR=/tmp/numba` (numba no puede escribir caché en `site-packages`).
    - `EXPOSE 8000`, `VOLUME /data` y `HEALTHCHECK` con `python -c "urllib.request.urlopen('http://127.0.0.1:8000/api/health')"`, porque la imagen slim no trae curl.
 3. `docker/entrypoint.sh`:
-   - Sin argumentos o con `web`: `uvicorn src.web.app:app --host 0.0.0.0 --port $FMH_PORT --workers 1`.
+   - Sin argumentos o con `web`: `uvicorn src.web.app:create_app --factory --host 0.0.0.0 --port $FMH_PORT --workers 1`.
    - Con `cli …`: `python -m src.main "$@"`.
    - Con cualquier otra cosa: `exec "$@"`.
 
