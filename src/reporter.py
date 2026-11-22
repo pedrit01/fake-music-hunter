@@ -2,14 +2,12 @@
 Módulo para generar reportes de análisis
 """
 
-import csv
-import json
 from pathlib import Path
 from datetime import datetime
-from typing import List, Dict
+from typing import Dict
 from rich.console import Console
-from rich.table import Table
-from rich.progress import Progress, SpinnerColumn, TextColumn
+from src import __version__
+from src.core import reports
 from src.config import (
     DEFAULT_OUTPUT_DIR, EMOJI_MAP, COLOR_MAP,
     CLASS_LEGITIMATE, CLASS_FAKE, CLASS_SUSPICIOUS, CLASS_ERROR
@@ -42,9 +40,9 @@ class Reporter:
     def print_header(self):
         """Imprime el encabezado del programa"""
         try:
-            self.console.print("\n🎵 [bold cyan]Fake Music Hunter v2.0[/bold cyan]")
+            self.console.print(f"\n🎵 [bold cyan]Fake Music Hunter v{__version__}[/bold cyan]")
         except UnicodeEncodeError:
-            self.console.print("\n[bold cyan]Fake Music Hunter v2.0[/bold cyan]")
+            self.console.print(f"\n[bold cyan]Fake Music Hunter v{__version__}[/bold cyan]")
         self.console.print("═" * 50)
     
     def print_scan_info(self, path: str, total_files: int):
@@ -133,61 +131,46 @@ class Reporter:
     def export_csv(self, output_path: str = None):
         """
         Exporta los resultados a CSV
-        
+
         Args:
             output_path: Ruta del archivo CSV de salida
         """
         if not self.results:
             return
-        
-        if output_path is None:
-            output_dir = Path(DEFAULT_OUTPUT_DIR)
-            output_dir.mkdir(exist_ok=True)
-            timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_path = output_dir / f"report_{timestamp}.csv"
-        else:
-            output_path = Path(output_path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Campos a exportar
-        fieldnames = [
-            'file_name', 'file_path', 'classification', 'reason',
-            'format', 'bitrate', 'sample_rate', 'cutoff_frequency',
-            'dynamic_range', 'file_size'
-        ]
-        
+
+        output_path = self._resolve_output_path(output_path, "csv")
         with open(output_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, extrasaction='ignore')
-            writer.writeheader()
-            
-            for result in self.results:
-                # Convertir bitrate a kbps para legibilidad
-                if result.get('bitrate'):
-                    result['bitrate'] = f"{result['bitrate']/1000:.0f} kbps"
-                writer.writerow(result)
-        
+            reports.to_csv(self.results, csvfile)
+
         self.console.print(f"\n💾 Reporte guardado: [cyan]{output_path}[/cyan]")
-    
+
     def export_json(self, output_path: str = None):
         """
         Exporta los resultados a JSON
-        
+
         Args:
             output_path: Ruta del archivo JSON de salida
         """
         if not self.results:
             return
-        
+
+        output_path = self._resolve_output_path(output_path, "json")
+        with open(output_path, 'w', encoding='utf-8') as jsonfile:
+            reports.to_json(self.results, jsonfile)
+
+        self.console.print(f"\n💾 Reporte JSON guardado: [cyan]{output_path}[/cyan]")
+
+    @staticmethod
+    def _resolve_output_path(output_path: str, extension: str) -> Path:
+        """Devuelve la ruta de salida, creando su carpeta si hace falta.
+
+        Sin ruta, genera una con fecha y hora dentro de DEFAULT_OUTPUT_DIR.
+        """
         if output_path is None:
-            output_dir = Path(DEFAULT_OUTPUT_DIR)
-            output_dir.mkdir(exist_ok=True)
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            output_path = output_dir / f"report_{timestamp}.json"
+            output_path = Path(DEFAULT_OUTPUT_DIR) / f"report_{timestamp}.{extension}"
         else:
             output_path = Path(output_path)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        with open(output_path, 'w', encoding='utf-8') as jsonfile:
-            json.dump(self.results, jsonfile, indent=2, ensure_ascii=False)
-        
-        self.console.print(f"\n💾 Reporte JSON guardado: [cyan]{output_path}[/cyan]")
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        return output_path

@@ -2,7 +2,7 @@
 
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-4%2F4%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-62%20passing-brightgreen.svg)](tests/)
 [![Accuracy](https://img.shields.io/badge/accuracy-85.7%25-success.svg)](ALGORITHM.md)
 
 Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudulentamente mediante análisis espectral.
@@ -17,9 +17,12 @@ Herramienta avanzada para detectar archivos de audio falsos o upscaleados fraudu
 - [Instalación](#instalación)
   - [Opción 1: Ejecutable Windows (Sin Python)](#opción-1-ejecutable-windows-sin-python)
   - [Opción 2: Desde Código Fuente](#opción-2-desde-código-fuente)
+  - [Opción 3: Docker (interfaz web)](#opción-3-docker-interfaz-web)
 - [Uso](#uso)
   - [Uso del Ejecutable](#uso-del-ejecutable-exe)
   - [Uso desde Código Fuente](#uso-desde-código-fuente)
+- [Docker](#-docker)
+- [API Web](#-api-web)
 - [Cómo Funciona](#-cómo-funciona)
   - [Algoritmo Híbrido](#algoritmo-híbrido-de-detección)
   - [Métricas Analizadas](#métricas-analizadas)
@@ -83,7 +86,19 @@ pip install -r requirements.txt
 
 **Requisitos:**
 - Python 3.13 o superior
-- Librerías: librosa, numpy, scipy, mutagen, rich, click, pandas, soundfile
+- Librerías: librosa, numpy, scipy, mutagen, rich, click, soundfile
+
+### Opción 3: Docker (interfaz web)
+
+Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker. La imagen está publicada en GitHub Container Registry:
+
+```bash
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro -v fmh-data:/data \
+  ghcr.io/pedrit01/fake-music-hunter:2.1.0
+```
+
+Abre `http://localhost:8000`. Más detalles en la sección [Docker](#-docker).
 
 ## Uso
 
@@ -122,7 +137,7 @@ Si instalaste desde el código fuente:
 
 **Análisis básico:**
 ```bash
-python src/main.py -p "C:\Music"
+python -m src.main -p "C:\Music"
 ```
 
 **Opciones avanzadas:**
@@ -155,7 +170,7 @@ python -m src.main -p "C:\Music\Album" --no-recursive
 ### Ejemplo de Salida
 
 ```
-Fake Music Hunter v2.0
+Fake Music Hunter v2.1.0
 ══════════════════════════════════════════════════
 
 📁 Escaneando: C:\Music\Albums
@@ -207,6 +222,168 @@ RESUMEN:
    ⚠️  Sospechosos: 8 (10.4%)
    🚫 Errores: 1 (1.3%)
 ```
+
+## 🐳 Docker
+
+La imagen incluye la interfaz web, la API y la CLI. Solo necesitas Docker; no hace falta instalar Python, ffmpeg ni Node.
+
+> ⚠️ **La aplicación no tiene autenticación.** Los ejemplos publican el puerto solo en `127.0.0.1`. No lo expongas a tu red o a Internet sin un proxy inverso con autenticación.
+
+La imagen se publica en GitHub Container Registry (`ghcr.io/pedrit01/fake-music-hunter`) para `linux/amd64` y `linux/arm64`, con una etiqueta por versión (`2.1.0`) y `latest`. También puedes construirla tú desde este repositorio.
+
+### Imagen publicada (sin clonar el repositorio)
+
+```bash
+docker pull ghcr.io/pedrit01/fake-music-hunter:2.1.0
+
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro \
+  -v fmh-data:/data \
+  ghcr.io/pedrit01/fake-music-hunter:2.1.0
+```
+
+Para actualizar, descarga la etiqueta nueva y vuelve a crear el contenedor; el historial sigue en el volumen `fmh-data`.
+
+### Descargar el proyecto
+
+Para usar `docker compose` o construir la imagen tú mismo, clona el repositorio. Para quedarte en una versión concreta, usa su etiqueta (las tienes en [Releases](https://github.com/pedrit01/fake-music-hunter/releases)):
+
+```bash
+git clone https://github.com/pedrit01/fake-music-hunter.git
+cd fake-music-hunter
+git checkout Version-2.1.0   # opcional: fija la versión
+```
+
+Sin Git, descarga el ZIP del código fuente desde la página de la release y descomprímelo.
+
+### Con Docker Compose (recomendado)
+
+```bash
+MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
+```
+
+La primera vez construye la imagen desde el código, lo que tarda unos minutos. Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
+
+Para actualizar a una versión nueva, baja los cambios y reconstruye la imagen:
+
+```bash
+git pull
+MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d --build
+```
+
+### Con docker run
+
+Desde la carpeta del repositorio:
+
+```bash
+docker build -t fake-music-hunter .
+
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro \
+  -v fmh-data:/data \
+  fake-music-hunter
+```
+
+### Modo CLI
+
+El mismo contenedor ejecuta la CLI con `cli` seguido de sus opciones habituales. Monta una carpeta escribible en `/data` para guardar los reportes:
+
+```bash
+docker run --rm -v "/ruta/a/tu/musica":/music:ro -v "$PWD/output":/data \
+  fake-music-hunter cli -p /music -o /data/reporte.csv -j /data/reporte.json
+```
+
+### Volúmenes
+
+| Ruta en el contenedor | Uso |
+|-----------------------|-----|
+| `/music` | Tu biblioteca de música. Móntala siempre en solo lectura (`:ro`); la aplicación nunca escribe en ella |
+| `/data` | Base de datos con el historial, subidas temporales y, en modo CLI, los reportes. Su contenido se puede borrar sin problema: solo hay resultados que se pueden regenerar |
+
+Las variables `FMH_*` de [Configuración](#configuración) se pasan con `-e` o en la sección `environment` de `docker-compose.yml`.
+
+### Permisos (UID/GID)
+
+El contenedor no se ejecuta como root, sino con el usuario `app` (UID 1000). Necesita poder **leer** `/music` y **escribir** en `/data`:
+
+- Con Docker Desktop u OrbStack en macOS los permisos se traducen solos.
+- Con un volumen con nombre (como `fmh-data` en el ejemplo de `docker run`), Docker lo crea con los permisos correctos y no hay que hacer nada.
+- En Linux, con una carpeta del host como `./data`, si tu usuario no es el 1000 ejecuta el contenedor con tu UID/GID: `--user "$(id -u):$(id -g)"` en `docker run`, o descomenta `user:` en `docker-compose.yml`. Crea antes la carpeta (`mkdir data`) para que sea tuya y no de root.
+
+### Memoria y `FMH_WORKERS`
+
+Cada archivo que se analiza a la vez ocupa un proceso con unos 200-300 MB de RAM. Por defecto se analizan `min(2, CPUs)` archivos en paralelo. Súbelo si tienes RAM y núcleos de sobra (por ejemplo, `FMH_WORKERS=4` con 2 GB libres) o bájalo a `1` en máquinas pequeñas como una Raspberry Pi.
+
+La imagen se puede construir para `linux/amd64` (PC, servidores) y `linux/arm64` (Mac con Apple Silicon, Raspberry Pi 4/5). `docker compose` y `docker build` construyen la de tu máquina; para las dos a la vez: `docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .`
+
+## 🌐 API Web
+
+Además de la CLI, Fake Music Hunter incluye un servicio HTTP (FastAPI) para lanzar análisis desde el navegador o desde otras herramientas. El análisis se hace en segundo plano y el progreso se puede seguir en tiempo real.
+
+### Arranque para desarrollo
+
+Para usarla, lo más sencillo es la [imagen Docker](#-docker). Para desarrollar, con el código montado:
+
+```bash
+docker build -f docker/dev.Dockerfile -t fmh-dev .
+docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD":/app \
+  -v "/ruta/a/tu/musica":/music:ro -e FMH_DATA_DIR=/tmp/fmh-data \
+  fmh-dev uvicorn src.web.app:create_app --factory --host 0.0.0.0 --port 8000
+```
+
+O sin Docker, con `pip install -r requirements-web.txt`:
+
+```bash
+FMH_LIBRARY_ROOT="/ruta/a/tu/musica" FMH_DATA_DIR=./data \
+  uvicorn src.web.app:create_app --factory --port 8000
+```
+
+La documentación interactiva (OpenAPI) queda en `http://localhost:8000/docs`.
+
+> ⚠️ La API no tiene autenticación. Úsala solo en tu red local o detrás de un proxy inverso con autenticación.
+
+### Endpoints
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/health` | Estado del servicio, versión y si hay biblioteca configurada |
+| GET | `/api/library?path=<carpeta>` | Subcarpetas y número de archivos de audio de una carpeta de la biblioteca |
+| POST | `/api/jobs` | Analiza una carpeta: `{"path": "Albums/2024", "recursive": true, "formats": ["flac"]}` |
+| POST | `/api/jobs/upload` | Analiza archivos subidos (`multipart/form-data`, campo `files`) |
+| GET | `/api/jobs` | Historial de trabajos (`offset`, `limit`) |
+| GET | `/api/jobs/{id}` | Estado y progreso: `queued`, `running`, `completed`, `failed` o `cancelled` |
+| GET | `/api/jobs/{id}/results` | Resultados paginados (`offset`, `limit`), filtrables por `classification` (uno o varios valores), `format` y `q` (nombre), y ordenables con `sort` y `order` (ver abajo) |
+| GET | `/api/jobs/{id}/events` | Progreso en tiempo real (Server-Sent Events: `progress` y `done`) |
+| GET | `/api/jobs/{id}/report.csv` · `report.json` | Descarga del reporte (mismo formato que la CLI) |
+| POST | `/api/jobs/{id}/cancel` | Cancela un trabajo en curso; los resultados ya obtenidos se conservan |
+
+**Filtrar y ordenar resultados.** `classification` se puede repetir para pedir varias clasificaciones a la vez. `sort` ordena todos los resultados en el servidor, antes de paginar:
+
+- Valores de `sort`: `severity` (fake → suspicious → error → legitimate), `file_name`, `format`, `bitrate`, `cutoff_frequency` o `spectral_presence`.
+- `order` puede ser `asc` (por defecto) o `desc`. Los valores ausentes quedan siempre al final.
+- Sin `sort`, los resultados salen en el orden en que se analizaron.
+- Un valor no admitido devuelve un error 422 que indica los valores válidos.
+
+```bash
+# Solo los problemas, los más graves primero
+curl "http://localhost:8000/api/jobs/<id>/results?classification=fake&classification=suspicious&classification=error&sort=severity"
+
+# Frecuencias de corte más bajas primero
+curl "http://localhost:8000/api/jobs/<id>/results?sort=cutoff_frequency&order=asc&limit=20"
+```
+
+Las rutas de la biblioteca son siempre relativas a su raíz; cualquier ruta que intente salir de ella (`..`, rutas absolutas o enlaces simbólicos) se rechaza. Los archivos subidos se borran al terminar su análisis.
+
+### Configuración
+
+| Variable | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `FMH_LIBRARY_ROOT` | `/music` | Carpeta de música que se puede navegar y analizar (solo lectura) |
+| `FMH_DATA_DIR` | `/data` | Carpeta escribible: base de datos de trabajos y subidas temporales |
+| `FMH_PORT` | `8000` | Puerto del servicio |
+| `FMH_WORKERS` | `min(2, CPUs)` | Archivos analizándose a la vez (cada proceso usa ~200-300 MB de RAM) |
+| `FMH_MAX_UPLOAD_MB` | `500` | Tamaño máximo de cada archivo subido |
+| `FMH_RETENTION_DAYS` | `30` | Días que se conservan los trabajos terminados |
 
 ## 🔬 Cómo Funciona
 
@@ -278,16 +455,20 @@ Analizar presencia espectral en rango 18-22 kHz
 fake-music-hunter/
 ├── src/
 │   ├── main.py         # Punto de entrada CLI
+│   ├── core/           # Servicio de análisis compartido (resultado, análisis, reportes)
+│   ├── web/            # API FastAPI, trabajos en segundo plano y persistencia SQLite
 │   ├── scanner.py      # Escaneo de directorios
 │   ├── analyzer.py     # Análisis espectral (STFT, presencia espectral)
 │   ├── detector.py     # Algoritmo híbrido de detección
 │   ├── reporter.py     # Generación de reportes (consola, CSV, JSON)
 │   └── config.py       # Configuración y umbrales
-├── tests/              # Tests unitarios (pytest)
-│   ├── __init__.py
-│   └── test_detector.py
+├── frontend/           # Interfaz web (React + TypeScript + Vite)
+├── docker/             # Entrypoint e imagen de desarrollo
+├── tests/              # Tests unitarios (pytest), incluidos los de la API en tests/web
 ├── output/             # Reportes generados
-├── requirements.txt    # Dependencias
+├── Dockerfile          # Imagen de producción (web + API + CLI)
+├── docker-compose.yml  # Despliegue de ejemplo
+├── requirements.txt    # Dependencias de la CLI (requirements-web/-dev amplían)
 ├── pytest.ini         # Configuración de pytest
 ├── README.md          # Este archivo
 ├── TESTING.md         # Guía de pruebas
@@ -297,7 +478,14 @@ fake-music-hunter/
 
 ## 🧪 Tests
 
-El proyecto incluye tests unitarios con pytest:
+El proyecto incluye tests unitarios con pytest. La forma recomendada de ejecutarlos es en Docker, sin instalar nada en tu máquina:
+
+```bash
+docker build -f docker/dev.Dockerfile -t fmh-dev .
+docker run --rm -v "$PWD":/app fmh-dev pytest
+```
+
+O bien, con un entorno virtual propio (`pip install -r requirements-dev.txt`):
 
 ```bash
 # Ejecutar todos los tests
@@ -426,7 +614,6 @@ Las contribuciones son bienvenidas. Para cambios importantes:
 **Áreas de mejora:**
 - Detección de artefactos específicos de codecs
 - Machine learning para patrones de conversión
-- GUI para visualización de resultados
 - Soporte para más formatos de audio
 
 ## 🐛 Reportar Issues
@@ -457,4 +644,4 @@ MIT
 
 ---
 
-**Última actualización**: 16 de noviembre de 2025 | **Versión**: 2.0
+**Última actualización**: 22 de noviembre de 2026 | **Versión**: 2.1.0

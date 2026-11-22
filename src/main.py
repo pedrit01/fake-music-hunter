@@ -2,17 +2,19 @@
 Punto de entrada principal para Fake Music Hunter
 """
 
+import logging
+
 import click
-from pathlib import Path
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from src import __version__
 from src.scanner import AudioScanner
-from src.analyzer import AudioAnalyzer
-from src.detector import FakeDetector
+from src.core.service import analyze_file
 from src.reporter import Reporter
 from src.config import SUPPORTED_FORMATS
 
 
 @click.command()
+@click.version_option(__version__, prog_name='Fake Music Hunter')
 @click.option('--path', '-p', required=True, type=click.Path(exists=True),
               help='Ruta del directorio a escanear')
 @click.option('--recursive/--no-recursive', '-r', default=True,
@@ -32,6 +34,9 @@ def main(path: str, recursive: bool, formats: tuple, output: str, json: str, ver
     Analiza archivos de audio para detectar si han sido convertidos
     desde formatos de menor calidad.
     """
+    # Los avisos de los módulos de análisis salen por stderr, sin adornos
+    logging.basicConfig(level=logging.WARNING, format='%(message)s')
+
     # Inicializar reporter
     reporter = Reporter(verbose=verbose)
     reporter.print_header()
@@ -68,20 +73,8 @@ def main(path: str, recursive: bool, formats: tuple, output: str, json: str, ver
             # Actualizar progreso
             progress.update(task, description=f"[cyan]Analizando: {file_path.name}")
             
-            # Analizar archivo
-            analyzer = AudioAnalyzer(file_path)
-            analysis_results = analyzer.analyze()
-            
-            # Detectar fake
-            classification, reason = FakeDetector.detect(analysis_results)
-            
-            # Añadir resultados
-            result = {
-                **analysis_results,
-                'classification': classification,
-                'reason': reason
-            }
-            
+            # Analizar y clasificar el archivo
+            result = analyze_file(file_path).to_dict()
             reporter.add_result(result)
             
             # Imprimir resultado individual

@@ -2,6 +2,8 @@
 
 ## Crear Release Ejecutable para Windows
 
+> **Nota (v2.1):** el build no cambia. `src/main.py` solo usa el núcleo de análisis (`src/core/`) y nunca importa la parte web (`src/web/`), así que PyInstaller no incluye FastAPI ni sus dependencias. Basta con instalar `requirements.txt` en el venv.
+
 ### ⚠️ IMPORTANTE: Usar el Python del Entorno Virtual
 
 PyInstaller **DEBE** ejecutarse con el Python del entorno virtual donde están instaladas todas las dependencias. Si usas solo `python`, puede ejecutarse el Python del sistema que no tiene las librerías necesarias.
@@ -38,7 +40,7 @@ cd C:\Users\pedjl\OneDrive\WorkSpace\fake-music-hunter
 - Ejecutable generado en: `dist\fake-music-hunter.exe`
 - Tamaño aproximado: **200-250 MB**
 - Tiempo de compilación: **5-10 minutos**
-- Incluye: Python 3.13.9 + todas las dependencias (librosa, numpy, scipy, mutagen, rich, click, pandas, soundfile)
+- Incluye: Python 3.13 + las dependencias de `requirements.txt` (librosa, numpy, scipy, mutagen, rich, click, soundfile)
 
 ### ❌ Problemas Comunes y Soluciones
 
@@ -121,35 +123,38 @@ Compress-Archive -Path release\* -DestinationPath fake-music-hunter-v2.0-windows
 
 ### Publicar en GitHub Releases
 
-```powershell
-# Crear tag de versión
-git tag -a v2.0 -m "Release v2.0 - Hybrid Detection Algorithm"
-git push origin v2.0
+Las etiquetas siguen el formato `Version-X.Y.Z` y apuntan a `main`. Las notas de la release son la entrada de esa versión en `CHANGELOG.md`.
 
-# Subir a GitHub Releases (usando gh CLI)
-gh release create v2.0 fake-music-hunter-v2.0-windows-x64.zip --title "Fake Music Hunter v2.0" --notes "
-## 🎵 Fake Music Hunter v2.0
+```bash
+# 1. Pasar develop a main
+git checkout main
+git merge --no-ff develop
+git push origin main
 
-### ✨ Características
-- Algoritmo híbrido de dos fases con 85.7% de precisión
-- Análisis espectral avanzado (presencia 18-22 kHz)
-- Detección de contenido >20 kHz (fast path)
-- Soporte FLAC, WAV, MP3
-- Salida en JSON, CSV, y consola con colores
+# 2. Crear y subir la etiqueta
+git tag -a Version-2.1.0 -m "Fake Music Hunter 2.1.0 - Docker e interfaz web"
+git push origin Version-2.1.0
 
-### 📊 Métricas de Detección
-- **Legítimos:** 85.7%
-- **Fake:** 2.6%
-- **Sospechosos:** 10.4%
-- **Errores:** 1.3%
-
-### 🚀 Instalación
-Descarga \`fake-music-hunter.exe\` y ejecuta desde PowerShell o CMD. No requiere Python instalado.
-
-### 📖 Documentación
-Ver README.md para uso detallado y ALGORITHM.md para detalles técnicos.
-"
+# 3. Crear la release con las notas (y el .exe de Windows si se ha compilado)
+gh release create Version-2.1.0 --title "Fake Music Hunter 2.1.0" --notes-file RELEASE_NOTES.md \
+  fake-music-hunter-v2.1.0-windows.exe
 ```
+
+Las notas de cada versión están en `RELEASE_NOTES.md` (bloque de instalación + entrada del CHANGELOG): úsalo como `--notes-file`.
+
+### Publicar la imagen en GHCR
+
+Requiere un token con `write:packages` (el de `gh` sirve si lo tiene: `gh auth refresh -s write:packages`).
+
+```bash
+gh auth token | docker login ghcr.io -u pedrit01 --password-stdin
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t ghcr.io/pedrit01/fake-music-hunter:2.1.0 \
+  -t ghcr.io/pedrit01/fake-music-hunter:latest \
+  --push .
+```
+
+La primera vez que se publica, el paquete es privado: hazlo público en GitHub → Packages → fake-music-hunter → Package settings → Change visibility.
 
 ## 📊 Información Técnica del Ejecutable
 
@@ -165,7 +170,6 @@ El ejecutable incluye:
 - ✅ click 8.3.1 (CLI)
 - ✅ rich 14.2.0 (interfaz de consola)
 - ✅ mutagen 1.47.0 (metadatos de audio)
-- ✅ pandas 2.3.3 (manejo de datos)
 - ✅ soundfile 0.13.1 (lectura de audio)
 - ✅ numba 0.62.1 (optimización JIT)
 
