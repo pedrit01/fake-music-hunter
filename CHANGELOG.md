@@ -33,7 +33,7 @@
 - 🐳 **Imagen única** con web, API y CLI: build multi-stage, usuario sin privilegios (UID 1000) y healthcheck
 - `docker-compose.yml` de ejemplo: música en solo lectura, historial en `./data` y puerto solo en `127.0.0.1`
 - Modo CLI dentro del contenedor: `docker run … fake-music-hunter cli -p /music -o /data/reporte.csv`
-- Se construye para **linux/amd64 y linux/arm64** a partir del repositorio, sin depender de ningún registro de imágenes
+- Imagen publicada en **GitHub Container Registry** (`ghcr.io/pedrit01/fake-music-hunter:2.1.0`) para **linux/amd64 y linux/arm64**; también se puede construir desde el repositorio
 - Imagen de desarrollo (`docker/dev.Dockerfile`) para ejecutar tests y CLI sin instalar nada en el equipo
 
 ### 🔧 Refactorización
@@ -56,7 +56,8 @@
 
 ### 📚 Documentación
 
-- README: secciones de Docker (descarga desde GitHub, arranque y actualización) y API web
+- README: secciones de Docker (imagen de GHCR, descarga del repositorio, arranque y actualización) y API web
+- Licencia MIT (`LICENSE`)
 - `frontend/README.md`: desarrollo de la interfaz con Docker
 - Workflow de GitHub Actions (tests, build web y build multi-arch), de momento con arranque manual
 

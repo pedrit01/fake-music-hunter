@@ -136,11 +136,25 @@ git tag -a Version-2.1.0 -m "Fake Music Hunter 2.1.0 - Docker e interfaz web"
 git push origin Version-2.1.0
 
 # 3. Crear la release con las notas (y el .exe de Windows si se ha compilado)
-gh release create Version-2.1.0 --title "Fake Music Hunter 2.1.0" --notes-file notas-2.1.0.md \
+gh release create Version-2.1.0 --title "Fake Music Hunter 2.1.0" --notes-file RELEASE_NOTES.md \
   fake-music-hunter-v2.1.0-windows.exe
 ```
 
-GitHub añade a cada release el código fuente en ZIP y tar.gz, que es lo que necesita quien use Docker: no hay imagen publicada en ningún registro (ver la sección Docker del README).
+Las notas de cada versión están en `RELEASE_NOTES.md` (bloque de instalación + entrada del CHANGELOG): úsalo como `--notes-file`.
+
+### Publicar la imagen en GHCR
+
+Requiere un token con `write:packages` (el de `gh` sirve si lo tiene: `gh auth refresh -s write:packages`).
+
+```bash
+gh auth token | docker login ghcr.io -u pedrit01 --password-stdin
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t ghcr.io/pedrit01/fake-music-hunter:2.1.0 \
+  -t ghcr.io/pedrit01/fake-music-hunter:latest \
+  --push .
+```
+
+La primera vez que se publica, el paquete es privado: hazlo público en GitHub → Packages → fake-music-hunter → Package settings → Change visibility.
 
 ## 📊 Información Técnica del Ejecutable
 

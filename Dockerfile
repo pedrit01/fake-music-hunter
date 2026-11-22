@@ -16,6 +16,12 @@ RUN npm run build
 # Etapa 2: runtime de Python con la API, la CLI y la web compilada.
 FROM python:3.13-slim
 
+# Metadatos OCI: GHCR usa "source" para enlazar la imagen con el repositorio
+LABEL org.opencontainers.image.title="Fake Music Hunter" \
+      org.opencontainers.image.description="Detecta archivos de audio falsos o upscaleados mediante análisis espectral" \
+      org.opencontainers.image.source="https://github.com/pedrit01/fake-music-hunter" \
+      org.opencontainers.image.licenses="MIT"
+
 # ffmpeg decodifica MP3 y libsndfile da soporte a FLAC/WAV.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ffmpeg libsndfile1 \

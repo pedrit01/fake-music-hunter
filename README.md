@@ -90,12 +90,12 @@ pip install -r requirements.txt
 
 ### Opción 3: Docker (interfaz web)
 
-Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker y Git. La imagen se construye en tu equipo a partir de este repositorio:
+Para usar Fake Music Hunter desde el navegador, sin instalar nada más que Docker. La imagen está publicada en GitHub Container Registry:
 
 ```bash
-git clone https://github.com/pedrit01/fake-music-hunter.git
-cd fake-music-hunter
-MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro -v fmh-data:/data \
+  ghcr.io/pedrit01/fake-music-hunter:2.1.0
 ```
 
 Abre `http://localhost:8000`. Más detalles en la sección [Docker](#-docker).
@@ -229,11 +229,24 @@ La imagen incluye la interfaz web, la API y la CLI. Solo necesitas Docker; no ha
 
 > ⚠️ **La aplicación no tiene autenticación.** Los ejemplos publican el puerto solo en `127.0.0.1`. No lo expongas a tu red o a Internet sin un proxy inverso con autenticación.
 
-No hay una imagen publicada en ningún registro: todo lo necesario está en este repositorio y la imagen se construye en tu equipo.
+La imagen se publica en GitHub Container Registry (`ghcr.io/pedrit01/fake-music-hunter`) para `linux/amd64` y `linux/arm64`, con una etiqueta por versión (`2.1.0`) y `latest`. También puedes construirla tú desde este repositorio.
+
+### Imagen publicada (sin clonar el repositorio)
+
+```bash
+docker pull ghcr.io/pedrit01/fake-music-hunter:2.1.0
+
+docker run -d --name fake-music-hunter -p 127.0.0.1:8000:8000 \
+  -v "/ruta/a/tu/musica":/music:ro \
+  -v fmh-data:/data \
+  ghcr.io/pedrit01/fake-music-hunter:2.1.0
+```
+
+Para actualizar, descarga la etiqueta nueva y vuelve a crear el contenedor; el historial sigue en el volumen `fmh-data`.
 
 ### Descargar el proyecto
 
-Clona el repositorio. Para quedarte en una versión concreta, usa su etiqueta (las tienes en [Releases](https://github.com/pedrit01/fake-music-hunter/releases)):
+Para usar `docker compose` o construir la imagen tú mismo, clona el repositorio. Para quedarte en una versión concreta, usa su etiqueta (las tienes en [Releases](https://github.com/pedrit01/fake-music-hunter/releases)):
 
 ```bash
 git clone https://github.com/pedrit01/fake-music-hunter.git
@@ -249,7 +262,7 @@ Sin Git, descarga el ZIP del código fuente desde la página de la release y des
 MUSIC_DIR="/ruta/a/tu/musica" docker compose up -d
 ```
 
-La primera vez construye la imagen, lo que tarda unos minutos. Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
+La primera vez construye la imagen desde el código, lo que tarda unos minutos. Abre `http://localhost:8000`. Desde la web puedes navegar tu biblioteca, analizar carpetas o subir archivos sueltos, seguir el progreso y descargar los reportes. El historial se guarda en `./data` y se conserva entre reinicios (`docker compose down` y `up`). Para pararlo: `docker compose down`.
 
 Para actualizar a una versión nueva, baja los cambios y reconstruye la imagen:
 
