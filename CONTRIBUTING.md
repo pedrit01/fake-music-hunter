@@ -1,222 +1,118 @@
-# 🚀 Guía Rápida para Desarrolladores
+# 🚀 Guía para contribuir
 
-Bienvenido a **Fake Music Hunter**! Esta guía te ayudará a comenzar rápidamente.
+Gracias por querer mejorar **Fake Music Hunter**. Esta guía explica cómo preparar el entorno, cómo está organizado el código y cómo proponer cambios.
 
-## ⚡ Setup Rápido (5 minutos)
+## ⚡ Entorno de desarrollo
+
+Todo se ejecuta en Docker: no hace falta instalar Python, Node ni ffmpeg en tu equipo. La imagen de desarrollo tiene las dependencias y el código se monta en `/app`, así que solo hay que reconstruirla cuando cambian los `requirements*.txt`.
 
 ```bash
-# 1. Clonar el repositorio
 git clone https://github.com/pedrit01/fake-music-hunter.git
 cd fake-music-hunter
+docker build -f docker/dev.Dockerfile -t fmh-dev .
 
-# 2. Crear entorno virtual
-python -m venv venv
+# Tests
+docker run --rm -v "$PWD":/app fmh-dev pytest
 
-# 3. Activar entorno (Windows)
-.venv\Scripts\Activate.ps1
+# CLI contra tu música (siempre en solo lectura)
+docker run --rm -v "$PWD":/app -v "/ruta/a/tu/musica":/music:ro fmh-dev python -m src.main -p /music -v
 
-# 4. Instalar dependencias
-pip install -r requirements.txt
-
-# 5. Ejecutar tests
-pytest -v
-
-# 6. Probar la aplicación
-python -m src.main --path "ruta/a/tus/audios" --formats flac --verbose
+# API + interfaz compilada (http://localhost:8000)
+docker run --rm -p 127.0.0.1:8000:8000 -v "$PWD":/app -v "/ruta/a/tu/musica":/music:ro \
+  -e FMH_DATA_DIR=/tmp/fmh-data -e FMH_STATIC_DIR=/app/frontend/dist \
+  fmh-dev uvicorn src.web.app:create_app --factory --host 0.0.0.0 --port 8000
 ```
 
-## 📚 Documentación Disponible
+La interfaz se compila en un contenedor de Node; `node_modules` vive en un volumen de Docker, nunca en tu equipo:
 
-| Archivo | Descripción |
-|---------|-------------|
-| **[README.md](README.md)** | Descripción general, instalación y uso |
-| **[ALGORITHM.md](ALGORITHM.md)** | Documentación técnica del algoritmo con diagramas |
-| **[TESTING.md](TESTING.md)** | Guía completa de pruebas paso a paso |
-| **[CHANGELOG.md](CHANGELOG.md)** | Historial de versiones y cambios |
+```bash
+docker run --rm -v "$PWD/frontend":/app -v fmh-node-modules:/app/node_modules -w /app node:22-alpine npm install
+docker run --rm -v "$PWD/frontend":/app -v fmh-node-modules:/app/node_modules -w /app node:22-alpine npm run build
+```
 
-## 🔍 Estructura Clave
+Para desarrollar la interfaz con recarga en caliente, ver [frontend/README.md](frontend/README.md).
+
+Ejecuta la CLI siempre como módulo (`python -m src.main`) desde la raíz del repositorio: los módulos se importan como `from src.x import ...` y `python src/main.py` falla.
+
+## 🔍 Organización del código
 
 ```
 src/
-├── main.py       → CLI (punto de entrada)
-├── analyzer.py   → Análisis espectral (aquí está la magia)
-├── detector.py   → Algoritmo híbrido de clasificación
-├── scanner.py    → Escaneo de archivos
-├── reporter.py   → Generación de reportes
-└── config.py     → Configuración y umbrales
+├── main.py        → CLI
+├── core/          → Núcleo compartido por la CLI y la web
+│   ├── service.py →   analyze_file / analyze_many (nunca lanzan excepciones)
+│   ├── result.py  →   AnalysisResult
+│   └── reports.py →   Exportadores CSV y JSON
+├── analyzer.py    → Análisis espectral (STFT, presencia espectral, corte)
+├── detector.py    → Reglas de clasificación por formato
+├── scanner.py     → Búsqueda de archivos de audio
+├── reporter.py    → Salida por consola (rich)
+├── config.py      → Umbrales y constantes
+└── web/           → API FastAPI: trabajos en segundo plano, SQLite, rutas seguras, subidas, limpieza
+frontend/src/      → Interfaz React + TypeScript (api/, hooks/, components/, pages/)
+tests/             → pytest; tests/web cubre la API con un analizador falso
 ```
 
-## 🎯 Flujo de Datos
+### Flujo de un análisis
 
 ```
-Archivo Audio → Scanner → Analyzer → Detector → Reporter
-                   ↓          ↓          ↓          ↓
-                 Path      STFT      Classify   Console/CSV/JSON
-                         Metrics    (Hybrid)
+CLI:  Scanner ─┐
+               ├→ core.analyze_file → Analyzer (STFT) → Detector → AnalysisResult ─┬→ Reporter (consola)
+Web:  JobManager (pool de procesos) ┘                                              ├→ core.reports (CSV/JSON)
+                                                                                   └→ SQLite → API → interfaz
 ```
 
-## 🧪 Ejecutar Tests
+- La CLI nunca importa `src/web`, para que el ejecutable de Windows no incluya FastAPI.
+- `analyze_file` convierte cualquier fallo en un resultado con clasificación `error`, así que un archivo dañado no detiene un análisis.
+- Las rutas que crean trabajos deben ser `async def`, porque el gestor crea una tarea asyncio en el bucle en marcha.
+
+## 🔧 Modificar el algoritmo
+
+- **Umbrales de MP3**: `CUTOFF_THRESHOLDS` y `SUSPICIOUS_THRESHOLD` en `src/config.py`.
+- **Umbrales de FLAC/WAV**: están escritos directamente en el código, no en `config.py`:
+  - en `analyzer.calculate_spectral_stats`: −70 dB y −65 dB por bin, y las bandas de 18, 20 y 22 kHz;
+  - en `detector.detect_flac`: 30, 15 y 5 % de presencia, −60 dB de energía y el corte de 16 500 Hz.
+- **Duración analizada**: `ANALYSIS_DURATION` en `config.py` (30 segundos).
+
+Después de cambiar el algoritmo, pasa los tests y compara la clasificación de una carpeta de prueba antes y después (`-j antes.json` / `-j despues.json`). Para comprobar casos concretos, mira su espectrograma en [Spek](https://www.spek.cc/), como explica [TESTING.md](TESTING.md).
+
+### Añadir una métrica
+
+1. Calcúlala y devuélvela en `analyzer.calculate_spectral_stats`.
+2. Léela con `.get()` y un valor por defecto en `detector`.
+3. Añade el campo a `AnalysisResult` (`core/result.py`) y rellénalo en `core/service.analyze_file`.
+4. Muéstrala en `reporter.py` y, si debe ir en el CSV, añádela a `CSV_FIELDS` en `core/reports.py`.
+5. Para verla en la web, añádela al tipo `AnalysisResult` de `frontend/src/api/types.ts`, que replica el modelo a mano, y al detalle de `ResultsTable.tsx`.
+
+## 🧪 Tests
 
 ```bash
-# Todos los tests
-pytest -v
-
-# Con cobertura
-pytest --cov=src --cov-report=term-missing
-
-# Solo un test específico
-pytest tests/test_detector.py::TestFakeDetector::test_detect_flac_fake -v
+docker run --rm -v "$PWD":/app fmh-dev pytest                                   # todos
+docker run --rm -v "$PWD":/app fmh-dev pytest --cov=src --cov-report=term-missing
+docker run --rm -v "$PWD":/app fmh-dev pytest tests/test_detector.py::TestFakeDetector::test_detect_flac_fake
 ```
 
-## 🔧 Modificar el Algoritmo
+- `test_detector.py` usa diccionarios de análisis escritos a mano.
+- `test_service.py` genera WAV sintéticos en el momento (ruido completo → legítimo, ruido filtrado a 16 kHz → fake, bytes basura → error), así que no hay audio en el repositorio.
+- `tests/web` crea la app con un analizador falso que clasifica por el nombre del archivo, de modo que los tests de la API son rápidos.
 
-### Ajustar Umbrales
-Edita `src/config.py`:
-```python
-CUTOFF_THRESHOLDS = {
-    'mp3_320': 20000,  # Ajusta aquí
-    # ...
-}
-```
+Todo cambio debe dejar los tests en verde y, si añade comportamiento, venir con tests nuevos.
 
-### Modificar Presencia Espectral
-Edita `src/analyzer.py` → `calculate_spectral_stats()`:
-```python
-# Umbral de energía para bins
-significant_high_freq = np.sum(spectrum_db[high_freq_mask] > -70)  # Ajusta -70
-```
+## 📝 Proponer un cambio
 
-### Cambiar Clasificación
-Edita `src/detector.py` → `detect_flac()`:
-```python
-if spectral_presence > 30:  # Ajusta 30
-    return CLASS_LEGITIMATE, "..."
-```
+1. Crea una rama desde `develop` (`git checkout -b feature/mi-mejora develop`).
+2. Para cambios de comportamiento, planifícalos con [OpenSpec](https://github.com/Fission-AI/OpenSpec) en `openspec/changes/`. Las especificaciones vigentes están en `openspec/specs/`.
+3. Escribe los mensajes de commit en inglés, empezando por una etiqueta entre corchetes: `[add]`, `[fix]`, `[update]`, `[refactor]`, `[docs]`, `[test]`, `[ci]` o `[chore]`. Por ejemplo: `[fix] Keep bitrate in bps when exporting JSON`.
+4. El código, los comentarios, los docstrings y los textos de la interfaz van en español.
+5. Abre un pull request contra `develop`.
 
-## 🐛 Debug Mode
+Si un archivo se clasifica mal, abre un issue con la salida del programa (`-v`) y, si puedes, una captura de su espectrograma en Spek.
 
-Para ver información detallada durante el análisis:
+## 🌟 Ideas para contribuir
 
-```python
-# En analyzer.py, descomenta:
-print(f"Spectral presence: {spectral_presence:.1f}%")
-print(f"Has content >20kHz: {has_content_above_20k}")
-```
+- Detección de upsampling (por ejemplo, 44,1 kHz convertido a 96 kHz).
+- Exportar el espectrograma de cada archivo como imagen y mostrarlo en el detalle de la web.
+- Soporte para más formatos (AAC/M4A, OGG, OPUS).
+- Detección de artefactos específicos de cada códec.
 
-## 📊 Añadir Nueva Métrica
-
-1. **Calcular en `analyzer.py`**:
-```python
-def calculate_spectral_stats(self):
-    # ... código existente ...
-    
-    # Tu nueva métrica
-    my_metric = calcular_algo(spectrum_db, frequencies)
-    
-    return {
-        # ... existentes ...
-        'my_metric': my_metric
-    }
-```
-
-2. **Usar en `detector.py`**:
-```python
-def detect_flac(analysis_results):
-    my_metric = analysis_results.get('my_metric', 0)
-    
-    if my_metric > threshold:
-        return CLASS_LEGITIMATE, f"Mi métrica: {my_metric}"
-```
-
-3. **Mostrar en `reporter.py`**:
-```python
-def print_result(self, result):
-    my_metric = result.get('my_metric')
-    if my_metric:
-        self.console.print(f"   • Mi métrica: {my_metric}")
-```
-
-## 🎨 Personalizar Salida
-
-Colores y emojis en `src/config.py`:
-```python
-EMOJI_MAP = {
-    CLASS_LEGITIMATE: '✅',  # Cambia aquí
-    # ...
-}
-
-COLOR_MAP = {
-    CLASS_LEGITIMATE: 'green',  # O 'blue', 'cyan', etc.
-    # ...
-}
-```
-
-## 🔬 Validar Cambios
-
-Después de modificar el algoritmo:
-
-```bash
-# 1. Ejecutar tests
-pytest -v
-
-# 2. Probar con archivo conocido
-python -m src.main --path "test_files/known_fake.flac" --verbose
-
-# 3. Comparar resultados
-# Antes: resultados_v1.json
-# Después: resultados_v2.json
-```
-
-## 🚀 Tips de Desarrollo
-
-1. **Usa pytest watch** para desarrollo continuo:
-```bash
-pip install pytest-watch
-ptw
-```
-
-2. **Perfila el código** si es lento:
-```bash
-python -m cProfile -o profile.stats src/main.py --path "..."
-```
-
-3. **Visualiza con Spek** tus archivos de test para validar
-
-4. **Git workflow**:
-```bash
-git checkout -b feature/mi-mejora
-# hacer cambios
-pytest -v  # asegurar que tests pasan
-git commit -m "Añade mi mejora"
-git push origin feature/mi-mejora
-```
-
-## ❓ FAQ Rápido
-
-**P: ¿Cómo añado soporte para otro formato?**
-R: Añade la extensión en `config.py` → `SUPPORTED_FORMATS` y crea un método `detect_xxx()` en `detector.py`
-
-**P: ¿Cómo cambio el tiempo de análisis?**
-R: Modifica `ANALYSIS_DURATION` en `config.py` (default: 30 segundos)
-
-**P: ¿Por qué usa solo 30 segundos?**
-R: Balance entre precisión y rendimiento. Puedes aumentarlo si necesitas más precisión.
-
-**P: ¿Cómo exporto solo archivos fake?**
-R: Filtra el CSV/JSON generado o modifica `reporter.py` para filtrar durante exportación
-
-## 🌟 Mejoras Propuestas
-
-Ideas para contribuir:
-- [ ] Añadir GUI con Tkinter/PyQt
-- [ ] Modo batch con multiprocessing
-- [ ] Detección de upsampling
-- [ ] Exportar espectrogramas como imágenes
-- [ ] API REST para análisis remoto
-- [ ] Integración con reproductores de música
-
-## 📞 Contacto
-
-¿Dudas? Abre un issue en GitHub o revisa la documentación completa.
-
-Happy coding! 🎵
+¿Dudas? Abre un issue en GitHub. Happy coding! 🎵
