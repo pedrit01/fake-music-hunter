@@ -1,19 +1,24 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import { api } from "../api/client";
-import { CLASSIFICATIONS, type AnalysisResult, type Classification } from "../api/types";
+import {
+  CLASSIFICATIONS, PROBLEM_CLASSIFICATIONS,
+  type AnalysisResult, type Classification, type ResultSortKey, type SortOrder,
+} from "../api/types";
 import { CLASSIFICATION_LABELS, formatBitrate, formatBytes, formatNumber } from "../format";
 import { ClassificationBadge } from "./Badges";
 
 const PAGE_SIZE = 50;
 const SEARCH_DELAY_MS = 300;
 
-type SortKey = "file_name" | "classification" | "format" | "bitrate" | "cutoff_frequency" | "spectral_presence";
+// Valor del desplegable de clasificación que equivale a "Solo problemas"
+const PROBLEMS_OPTION = "problems";
 
-const COLUMNS: { key: SortKey; label: string; hideOnMobile: boolean }[] = [
+// La columna "Clasificación" ordena por gravedad: fake, sospechoso, error, legítimo
+const COLUMNS: { key: ResultSortKey; label: string; hideOnMobile: boolean }[] = [
   { key: "file_name", label: "Archivo", hideOnMobile: false },
-  { key: "classification", label: "Clasificación", hideOnMobile: false },
+  { key: "severity", label: "Clasificación", hideOnMobile: false },
   { key: "format", label: "Formato", hideOnMobile: true },
   { key: "bitrate", label: "Bitrate", hideOnMobile: true },
   { key: "cutoff_frequency", label: "Corte", hideOnMobile: true },
@@ -22,20 +27,22 @@ const COLUMNS: { key: SortKey; label: string; hideOnMobile: boolean }[] = [
 
 interface Props {
   jobId: string;
-  classification: Classification | undefined;
-  onClassificationChange: (classification: Classification | undefined) => void;
+  /** Clasificaciones a mostrar; una lista vacía muestra todas. */
+  classification: Classification[];
+  onClassificationChange: (classification: Classification[]) => void;
 }
 
 /**
- * Resultados de un trabajo. Los filtros y la paginación se resuelven en el
- * servidor; la ordenación se aplica a la página cargada.
+ * Resultados de un trabajo. Los filtros, el orden y la paginación se resuelven
+ * en el servidor, así que se aplican a todos los resultados y no solo a la
+ * página visible. Por defecto se muestran primero los problemas.
  */
 export function ResultsTable({ jobId, classification, onClassificationChange }: Props) {
   const [format, setFormat] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [offset, setOffset] = useState(0);
-  const [sort, setSort] = useState<{ key: SortKey; ascending: boolean }>({ key: "file_name", ascending: true });
+  const [sort, setSort] = useState<{ key: ResultSortKey; order: SortOrder }>({ key: "severity", order: "asc" });
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,21 +50,33 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  // Al cambiar cualquier filtro volvemos a la primera página
-  useEffect(() => setOffset(0), [classification, format, debouncedSearch]);
+  // Al cambiar cualquier filtro o el orden volvemos a la primera página
+  const classificationKey = classification.join(",");
+  useEffect(() => setOffset(0), [classificationKey, format, debouncedSearch, sort]);
 
-  const filters = { classification, format: format || undefined, q: debouncedSearch || undefined, offset, limit: PAGE_SIZE };
+  const filters = {
+    classification,
+    format: format || undefined,
+    q: debouncedSearch || undefined,
+    sort: sort.key,
+    order: sort.order,
+    offset,
+    limit: PAGE_SIZE,
+  };
   const results = useQuery({
     queryKey: ["results", jobId, filters],
     queryFn: () => api.results(jobId, filters),
     placeholderData: keepPreviousData,
   });
 
-  const rows = useMemo(() => sortRows(results.data?.items ?? [], sort.key, sort.ascending), [results.data, sort]);
+  const rows = results.data?.items ?? [];
   const total = results.data?.total ?? 0;
 
-  const toggleSort = (key: SortKey) =>
-    setSort((current) => ({ key, ascending: current.key === key ? !current.ascending : true }));
+  const toggleSort = (key: ResultSortKey) =>
+    setSort((current) => ({
+      key,
+      order: current.key === key && current.order === "asc" ? "desc" : "asc",
+    }));
 
   return (
     <div className="card">
@@ -65,9 +84,10 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
         <h2 style={{ margin: 0 }}>Resultados</h2>
         <span className="muted small" aria-live="polite">{total} {total === 1 ? "archivo" : "archivos"}</span>
         <span className="spacer" />
-        <select aria-label="Filtrar por clasificación" value={classification ?? ""}
-          onChange={(e) => onClassificationChange((e.target.value || undefined) as Classification | undefined)}>
+        <select aria-label="Filtrar por clasificación" value={classificationToOption(classification)}
+          onChange={(e) => onClassificationChange(optionToClassification(e.target.value))}>
           <option value="">Todas las clasificaciones</option>
+          <option value={PROBLEMS_OPTION}>Solo problemas</option>
           {CLASSIFICATIONS.map((value) => <option key={value} value={value}>{CLASSIFICATION_LABELS[value]}</option>)}
         </select>
         <select aria-label="Filtrar por formato" value={format} onChange={(e) => setFormat(e.target.value)}>
@@ -88,9 +108,9 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
             <tr>
               {COLUMNS.map((column) => (
                 <th key={column.key} className={column.hideOnMobile ? "hide-mobile" : ""}
-                  aria-sort={sort.key === column.key ? (sort.ascending ? "ascending" : "descending") : "none"}>
+                  aria-sort={sort.key === column.key ? (sort.order === "asc" ? "ascending" : "descending") : "none"}>
                   <button onClick={() => toggleSort(column.key)}>
-                    {column.label} {sort.key === column.key ? (sort.ascending ? "▲" : "▼") : ""}
+                    {column.label} {sort.key === column.key ? (sort.order === "asc" ? "▲" : "▼") : ""}
                   </button>
                 </th>
               ))}
@@ -172,15 +192,17 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function sortRows(rows: AnalysisResult[], key: SortKey, ascending: boolean): AnalysisResult[] {
-  const direction = ascending ? 1 : -1;
-  return [...rows].sort((a, b) => {
-    const left = a[key];
-    const right = b[key];
-    // Los valores ausentes siempre al final
-    if (left === null) return 1;
-    if (right === null) return -1;
-    if (typeof left === "number" && typeof right === "number") return (left - right) * direction;
-    return String(left).localeCompare(String(right), "es") * direction;
-  });
+/** Valor del desplegable que corresponde a la lista de clasificaciones filtradas. */
+function classificationToOption(classification: Classification[]): string {
+  if (classification.length === 0) return "";
+  if (classification.length === 1) return classification[0];
+  const isProblems = PROBLEM_CLASSIFICATIONS.every((value) => classification.includes(value))
+    && classification.length === PROBLEM_CLASSIFICATIONS.length;
+  return isProblems ? PROBLEMS_OPTION : "";
+}
+
+function optionToClassification(option: string): Classification[] {
+  if (option === "") return [];
+  if (option === PROBLEMS_OPTION) return PROBLEM_CLASSIFICATIONS;
+  return [option as Classification];
 }

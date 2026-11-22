@@ -39,10 +39,16 @@ async function readErrorMessage(response: Response): Promise<string> {
   return `Error del servidor (${response.status})`;
 }
 
-function withQuery(path: string, params: Record<string, string | number | undefined>): string {
+type QueryValue = string | number | undefined | (string | number)[];
+
+/** Añade los parámetros a la ruta. Las listas se envían repitiendo el parámetro. */
+function withQuery(path: string, params: Record<string, QueryValue>): string {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") query.set(key, String(value));
+    const values = Array.isArray(value) ? value : [value];
+    for (const item of values) {
+      if (item !== undefined && item !== "") query.append(key, String(item));
+    }
   }
   const text = query.toString();
   return text ? `${path}?${text}` : path;

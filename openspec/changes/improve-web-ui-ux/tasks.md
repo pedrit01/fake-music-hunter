@@ -28,12 +28,12 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 2. Tabla de resultados: problemas primero
 
-- [ ] 2.1 En `frontend/src/api/types.ts` y `client.ts`:
+- [x] 2.1 En `frontend/src/api/types.ts` y `client.ts`:
   - `ResultFilters` pasa a usar `classification: Classification[]`, `sort` y `order`.
   - `withQuery` serializa los parámetros repetidos.
 
   Verificar con `npm run typecheck`.
-- [ ] 2.2 En `ResultsTable.tsx`:
+- [x] 2.2 En `ResultsTable.tsx`:
   - Orden en el servidor, con valor inicial `severity` ascendente y el orden dentro de la `queryKey`.
   - Eliminar `sortRows`.
   - La cabecera "Clasificación" ordena por gravedad.
@@ -44,7 +44,7 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
   - Un trabajo de 82 archivos empieza por los 3 Fake y los 2 Sospechoso.
   - "Solo problemas" muestra 5 archivos.
   - Ordenar por "Corte" ascendente lleva los cortes más bajos a la primera página.
-- [ ] 2.3 Adaptar `JobPage.tsx` y `Summary.tsx` al filtro en forma de lista:
+- [x] 2.3 Adaptar `JobPage.tsx` y `Summary.tsx` al filtro en forma de lista:
   - Pulsar una tarjeta selecciona solo esa clasificación y volver a pulsarla la quita.
   - Las tarjetas con 0 usan la clase `empty`.
 

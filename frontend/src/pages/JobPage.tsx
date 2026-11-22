@@ -14,7 +14,7 @@ export function JobPage() {
   const { jobId = "" } = useParams();
   const job = useLiveJob(jobId);
   const queryClient = useQueryClient();
-  const [classification, setClassification] = useState<Classification | undefined>();
+  const [classification, setClassification] = useState<Classification[]>([]);
 
   const cancel = useMutation({
     mutationFn: () => api.cancelJob(jobId),

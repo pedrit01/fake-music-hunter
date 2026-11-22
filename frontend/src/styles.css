@@ -182,6 +182,8 @@ label.check { display: inline-flex; gap: 6px; align-items: center; cursor: point
 .summary-fake { color: var(--fake); background: var(--fake-bg); }
 .summary-suspicious { color: var(--suspicious); background: var(--suspicious-bg); }
 .summary-error { color: var(--error); background: var(--error-bg); }
+/* Sin resultados: colores apagados en vez de opacidad, para mantener el contraste */
+.summary-item.empty { color: var(--text-muted); background: var(--surface-muted); }
 
 /* --- Biblioteca --- */
 

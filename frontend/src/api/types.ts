@@ -5,6 +5,9 @@ export type Classification = "legitimate" | "fake" | "suspicious" | "error";
 
 export const CLASSIFICATIONS: Classification[] = ["legitimate", "fake", "suspicious", "error"];
 
+/** Clasificaciones que cuentan como "problema" en el filtro "Solo problemas". */
+export const PROBLEM_CLASSIFICATIONS: Classification[] = ["fake", "suspicious", "error"];
+
 export type JobStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 
 export const ACTIVE_STATUSES: JobStatus[] = ["queued", "running"];
@@ -71,10 +74,18 @@ export interface AnalysisResult {
   dynamic_range: number | null;
 }
 
+/** Claves de orden que admite la API; "severity" = fake, sospechoso, error, legítimo. */
+export type ResultSortKey =
+  "severity" | "file_name" | "format" | "bitrate" | "cutoff_frequency" | "spectral_presence";
+
+export type SortOrder = "asc" | "desc";
+
 export interface ResultFilters {
-  classification?: Classification;
+  classification: Classification[];
   format?: string;
   q?: string;
+  sort?: ResultSortKey;
+  order?: SortOrder;
   offset?: number;
   limit?: number;
 }
