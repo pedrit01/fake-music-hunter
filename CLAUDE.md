@@ -14,8 +14,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
   ```
   git add <files>
-  git commit -m "<type>: <short summary>" -m "<optional details>"
+  git commit -m "[add] <short summary>" -m "<optional details>"
   ```
+
+- **Commit message format:** start the subject with a tag in square brackets, then a short summary in English. Tags:
+  - `[add]`: new feature or files.
+  - `[fix]`: bug fix.
+  - `[update]`: change or improvement to something that already exists.
+  - `[refactor]`: restructuring with no change in behaviour.
+  - `[docs]`: documentation only.
+  - `[test]`: tests only.
+  - `[ci]`: CI workflows.
+  - `[chore]`: maintenance, such as dependencies, config or tooling.
+
+  Example: `[add] GitHub Actions workflow for tests and Docker image`.
 
 ## Project
 
@@ -60,6 +72,8 @@ docker run --rm -v "$HOME/Soulseek Downloads/complete/ogalla/MUSICA":/music:ro -
   fake-music-hunter cli -p /music -o /data/r.csv
 docker buildx build --platform linux/amd64,linux/arm64 -t fake-music-hunter .   # both build on 3.13
 ```
+
+CI (`.github/workflows/ci.yml`, on pushes to main/develop and on PRs) runs three jobs: pytest inside the `docker/dev.Dockerfile` image (the same command as locally), `npm ci && npm run build` for the frontend, and a `docker buildx` build for amd64/arm64 without pushing. Lint the workflow with `docker run --rm -v "$PWD":/repo -w /repo rhysd/actionlint:latest`.
 
 Dependencies are layered: `requirements.txt` (CLI runtime, the only one PyInstaller needs) ← `requirements-web.txt` (FastAPI, uvicorn, python-multipart, pydantic-settings) ← `requirements-dev.txt` (pytest, pytest-cov, httpx).
 
