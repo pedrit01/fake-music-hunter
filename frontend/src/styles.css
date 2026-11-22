@@ -117,7 +117,8 @@ button, .button {
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 .button-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .button-danger { color: var(--danger); border-color: var(--danger); }
-.link-button { border: none; background: none; padding: 0; color: var(--accent); }
+/* El padding vertical da una zona de toque de 24 px sin cambiar el aspecto de enlace */
+.link-button { border: none; background: none; padding: 4px 2px; min-height: 24px; color: var(--accent); }
 
 input[type="search"], select {
   font: inherit;
@@ -128,7 +129,11 @@ input[type="search"], select {
   padding: 7px 10px;
   min-width: 0;
 }
-label.check { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+label.check { display: inline-flex; gap: 6px; align-items: center; min-height: 24px; padding: 2px 4px; cursor: pointer; }
+label.check input[type="checkbox"] { width: 18px; height: 18px; margin: 0; }
+.check-group { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; border: none; margin: 0; padding: 0; }
+/* La leyenda va en línea con los checkboxes, como una etiqueta más */
+.check-group legend { float: left; padding: 0; margin-right: 4px; color: var(--text-muted); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: var(--gap); }
@@ -217,6 +222,7 @@ th button { border: none; background: none; padding: 0; color: inherit; font-wei
 tr.clickable { cursor: pointer; }
 tr.clickable:hover td { background: var(--surface-muted); }
 td.file-name { word-break: break-word; }
+.row-toggle { border: none; background: none; padding: 0; color: inherit; text-align: left; word-break: break-word; }
 td.number { white-space: nowrap; }
 .detail-cell { background: var(--surface-muted); }
 .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 8px 0 0; }
@@ -229,4 +235,13 @@ td.number { white-space: nowrap; }
   .hide-mobile { display: none; }
   .card { padding: 14px; }
   .main { padding-top: 16px; }
+}
+
+/* --- Movimiento reducido --- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }

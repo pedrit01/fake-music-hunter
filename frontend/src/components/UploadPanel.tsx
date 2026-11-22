@@ -88,7 +88,10 @@ export function UploadPanel() {
       {uploading ? (
         <div>
           <p className="small">Subiendo… {Math.round((progress ?? 0) * 100)} %</p>
-          <div className="progress"><div className="progress-bar" style={{ width: `${(progress ?? 0) * 100}%` }} /></div>
+          <div className="progress" role="progressbar" aria-label="Progreso de la subida"
+            aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round((progress ?? 0) * 100)}>
+            <div className="progress-bar" style={{ width: `${(progress ?? 0) * 100}%` }} />
+          </div>
         </div>
       ) : (
         <div className="row" style={{ marginTop: 12 }}>

@@ -77,7 +77,7 @@ export function JobPage() {
           <a className="button" href={api.reportUrl(jobId, "csv")} download>Descargar CSV</a>
           <a className="button" href={api.reportUrl(jobId, "json")} download>Descargar JSON</a>
         </div>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={data.total} aria-valuenow={data.processed}>
+        <div className="progress" role="progressbar" aria-label="Progreso del análisis" aria-valuemin={0} aria-valuemax={data.total} aria-valuenow={data.processed}>
           <div className="progress-bar" style={{ width: `${fraction * 100}%` }} />
         </div>
       </div>

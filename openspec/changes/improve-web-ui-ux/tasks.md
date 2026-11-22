@@ -61,14 +61,14 @@ Todo se ejecuta en Docker, con los comandos de `CLAUDE.md`:
 
 ## 4. Accesibilidad
 
-- [ ] 4.1 En `ResultsTable.tsx`, convertir el nombre del archivo en un `<button>` con `aria-expanded` y `aria-controls` hacia la fila de detalle. La fila conserva el clic con el ratón, sin alternar el detalle dos veces. Verificar con Playwright que Tab y Enter abren el detalle y Enter lo cierra.
-- [ ] 4.2 En `LibraryBrowser.tsx`, agrupar los formatos en `<fieldset>` con `<legend>Formatos</legend>`. Ajustar `styles.css` para que los controles pequeños tengan una zona de toque de al menos 24 × 24 px:
+- [x] 4.1 En `ResultsTable.tsx`, convertir el nombre del archivo en un `<button>` con `aria-expanded` y `aria-controls` hacia la fila de detalle. La fila conserva el clic con el ratón, sin alternar el detalle dos veces. Verificar con Playwright que Tab y Enter abren el detalle y Enter lo cierra.
+- [x] 4.2 En `LibraryBrowser.tsx`, agrupar los formatos en `<fieldset>` con `<legend>Formatos</legend>`. Ajustar `styles.css` para que los controles pequeños tengan una zona de toque de al menos 24 × 24 px:
   - `label.check`
   - checkboxes de 18 px
   - `.link-button` (migas de pan y "Quitar" de la subida)
 
   Verificar con Playwright, midiendo con `getBoundingClientRect`, que esos controles miden al menos 24 px de alto a 360 px de ancho.
-- [ ] 4.3 Añadir `aria-label` a las barras de progreso de `JobPage` y `UploadPanel`. Añadir `@media (prefers-reduced-motion: reduce)`, que anula transiciones y animaciones. Verificar con Playwright, emulando `reducedMotion: "reduce"`, que la barra no tiene `transition`.
+- [x] 4.3 Añadir `aria-label` a las barras de progreso de `JobPage` y `UploadPanel`. Añadir `@media (prefers-reduced-motion: reduce)`, que anula transiciones y animaciones. Verificar con Playwright, emulando `reducedMotion: "reduce"`, que la barra no tiene `transition`.
 
 ## 5. Móvil y pulido visual
 

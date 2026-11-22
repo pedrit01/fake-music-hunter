@@ -80,13 +80,15 @@ export function LibraryBrowser() {
           <input type="checkbox" checked={recursive} onChange={(e) => setRecursive(e.target.checked)} />
           Incluir subcarpetas
         </label>
-        <span className="muted">|</span>
-        {FORMATS.map((format) => (
-          <label key={format} className="check">
-            <input type="checkbox" checked={formats.includes(format)} onChange={() => toggleFormat(format)} />
-            {format.slice(1).toUpperCase()}
-          </label>
-        ))}
+        <fieldset className="check-group">
+          <legend>Formatos</legend>
+          {FORMATS.map((format) => (
+            <label key={format} className="check">
+              <input type="checkbox" checked={formats.includes(format)} onChange={() => toggleFormat(format)} />
+              {format.slice(1).toUpperCase()}
+            </label>
+          ))}
+        </fieldset>
       </div>
 
       {startJob.isError && <div className="notice notice-error">{startJob.error.message}</div>}

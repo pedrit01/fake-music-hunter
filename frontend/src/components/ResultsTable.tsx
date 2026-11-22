@@ -117,14 +117,23 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
             </tr>
           </thead>
           <tbody>
-            {rows.map((result) => {
+            {rows.map((result, index) => {
               const isExpanded = expanded === result.file_path;
+              const detailId = `detalle-${index}`;
+              const toggleDetail = () => setExpanded(isExpanded ? null : result.file_path);
               return (
                 <Fragment key={result.file_path}>
-                  <tr className="clickable" aria-expanded={isExpanded}
-                    onClick={() => setExpanded(isExpanded ? null : result.file_path)}>
+                  {/* Toda la fila responde al ratón; el botón da el acceso con teclado */}
+                  <tr className="clickable" onClick={toggleDetail}>
                     <td className="file-name">
-                      {result.file_name}
+                      <button type="button" className="row-toggle" aria-expanded={isExpanded} aria-controls={detailId}
+                        onClick={(event) => {
+                          // Sin esto, el clic llegaría también a la fila y el detalle se alternaría dos veces
+                          event.stopPropagation();
+                          toggleDetail();
+                        }}>
+                        {result.file_name}
+                      </button>
                       <div className="small muted">{result.reason}</div>
                     </td>
                     <td><ClassificationBadge value={result.classification} /></td>
@@ -134,7 +143,7 @@ export function ResultsTable({ jobId, classification, onClassificationChange }: 
                     <td className="hide-mobile number">{formatNumber(result.spectral_presence, "%")}</td>
                   </tr>
                   {isExpanded && (
-                    <tr>
+                    <tr id={detailId}>
                       <td colSpan={COLUMNS.length} className="detail-cell"><ResultDetail result={result} /></td>
                     </tr>
                   )}
